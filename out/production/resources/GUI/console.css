@@ -1,0 +1,52 @@
+﻿.root {
+    /* .root selector doesn't work */
+}
+
+Console .content {
+    -fx-background-color: black;
+    -fx-text-fill: white;
+
+    -fx-border: none;
+    -fx-text-border: black;
+    -fx-focus-color: black;
+
+    -fx-faint-focus-color: black;
+    -fx-border-color: black;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-border-top-left-radius: 0;
+    -fx-border-top-left-color: black;
+    -fx-border-top-left: none;
+
+
+}
+
+TextArea {
+    -fx-background-color: black;
+    -fx-border: none;
+    -fx-text-border: transparent;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-border-color: black;
+
+    -fx-padding: 5 5 0 5;
+}
+
+TextField {
+    -fx-background-color: black;
+    -fx-text-fill: white;
+
+    -fx-border:none;
+    -fx-text-border: transparent;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-border-color: black;
+
+}
+
+
+
+
+
