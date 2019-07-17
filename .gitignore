@@ -18,8 +18,13 @@ ArchiveApp.iml
 
 # Package Files #
 *.jar
+# Avoid ignoring lib jar files
+!lib/*.jar
 *.war
 *.ear
 
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
+
+# Ignore out folder
+out

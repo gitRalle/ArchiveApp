@@ -1,6 +1,9 @@
 package GUI;
 
 import IO.IO;
+import com.github.lalyos.jfiglet.FigletFont;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Worker;
@@ -15,10 +18,12 @@ import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
@@ -179,6 +184,10 @@ public class ArchiveAppController {
 
         tabPane.getTabs().get(0).setContent(new AnchorPane());
         tabPane.getTabs().get(0).getContent().requestFocus();
+
+        FontAwesomeIcon icon = FontAwesomeIcon.TOGGLE_ON;
+        hideButton.setGraphic(new FontAwesomeIconView(icon));
+
         
     }
 

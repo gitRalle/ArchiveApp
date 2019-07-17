@@ -7,10 +7,10 @@ public class IO {
     private final static String initPath = "Files\\init.data";
     private final static File   initFile = new File(initPath);
 
-
     public static void writeRootUrl(String rootPage, String pathToFolder) {
+        File fileToBeWritten = new File(pathToFolder + "\\" + "url.txt");
 
-        try (FileWriter writer = new FileWriter(new File(pathToFolder + "\\url.txt")))
+        try (FileWriter writer = new FileWriter(fileToBeWritten))
         {
             writer.write(rootPage);
         }
@@ -21,7 +21,7 @@ public class IO {
 
 
     public static String readRootUrl(File urlTxtFile) {
-        String line = "";
+        String line = null;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(urlTxtFile)))
         {
