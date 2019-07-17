@@ -1,21 +1,5 @@
 apply plugin : 'java'
 apply plugin : 'application'
-
-/*
-plugins {
-    id 'java'
-    id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.7'
-}
-
-
-javafx {
-    version = "12.0.1"
-    modules = [ 'javafx.controls', 'javafx.fxml' ]
-}
-*/
-
-
 mainClassName = 'GUI/ArchiveApp'
 
 sourceSets {
@@ -29,7 +13,6 @@ sourceSets {
 
 repositories {
     jcenter()
-    mavenCentral()
 }
 
 dependencies {
