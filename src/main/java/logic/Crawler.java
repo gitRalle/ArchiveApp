@@ -1,51 +1,58 @@
-package objects;
+package logic;
 
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import objects.CommandPrompt;
+import objects.CrawlType;
+import objects.UniqueConcurrentArrayList;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import GUI.Console;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static IO.IO.writeRootUrl;
-import static logic.ArchiveLogic.convertSrcSetToUrl;
-import static logic.ArchiveLogic.getExtensionType;
+import static io.IO.writeRootUrl;
+
+import utils.CrawlUtils;
+
 
 /**
  * Crawler class holds meta data needed for the nestled Crawl and Write classes to run properly
  * also holds all references for Crawl and Write threads.
  */
 public class Crawler {
-    // 'Crawl' Objects
+    // crawl objects
     private final String rootPage;
-    private Set<String> visitedUrls;
-    private UniqueConcurrentArrayList<String> imgList;
+    private Set<String> urlsToCrawl;
+    private UniqueConcurrentArrayList<String> uniqueImageUrls;
     private final int NUMBER_OF_CRAWLERS;
     private final int NUMBER_OF_URLS;
     private final boolean DOWNLOAD_IMAGES;
-    private final ExecutorService crawlPool;
-    private final ExecutorService writePool;
+    private final ExecutorService crawlThreadPool;
+    private final ExecutorService writeThreadPool;
+    private ExecutorService imageThreadPool = null;
     private final Directory dir;
+    private final boolean STACKTRACE;
+    private boolean initialized = false;
+    private final String userAgent = "Mozilla/10.0 (Windows NT 10.0) AppleWebKit/538.36 (KHTML, like Gecko) Chrome/69.420 Safari/537.36";
 
-    // GUI components TODO: look into moving there elsewhere?
-    private final Console console;
+    // gui components TODO: look into moving there elsewhere?
+    private final CommandPrompt prompt;
     private final TreeView<String> treeView;
 
     // Objects used to track iterations and time elapsed.
@@ -54,15 +61,16 @@ public class Crawler {
     private long imageStartTime;
     private long timePassed;
     private long imageTimePassed = 0;
-    private AtomicInteger iteratorCount;
-    private AtomicBoolean threadsTerminated;
-    private AtomicBoolean imageThreadsTerminated;
+    private AtomicInteger iteratorCount = new AtomicInteger(0);
+    private AtomicInteger imageIteratorCount = new AtomicInteger(0);
+    private final String crawlInitDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    private String crawlExeDate = null;
 
-    public Crawler(String rootPage, int nrOfCrawlers, int nrOfUrls, boolean downloadImages,
-                   Console console, TreeView<String> treeView) throws IOException, IllegalArgumentException {
+    public Crawler(String rootPage, int nrOfCrawlers, int nrOfUrls, boolean downloadImages, final boolean stacktrace,
+                   CommandPrompt prompt, TreeView<String> treeView) throws IOException, IllegalArgumentException {
         this.rootPage = rootPage;
-        visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>(10000)); // initialCapacity: Math.round(1.25f * nrOfUrls) / threadsTerminated crawlers at max?
-        imgList = new UniqueConcurrentArrayList<String>();
+        urlsToCrawl = Collections.newSetFromMap(new ConcurrentHashMap<>(10000)); // initialCapacity: Math.round(1.25f * nrOfUrls) / threadsTerminated crawlers at max?
+        uniqueImageUrls = new UniqueConcurrentArrayList<>();
         if (nrOfCrawlers > 10)
             throw new IllegalArgumentException(
                     "max 10 threads / threadPool"
@@ -70,16 +78,17 @@ public class Crawler {
         NUMBER_OF_CRAWLERS = nrOfCrawlers;
         NUMBER_OF_URLS = nrOfUrls;
         DOWNLOAD_IMAGES = downloadImages;
-        crawlPool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
-        writePool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
-        iteratorCount = new AtomicInteger(0);
-        threadsTerminated = new AtomicBoolean(false);
-        imageThreadsTerminated = null;
+        crawlThreadPool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
+        writeThreadPool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
+        STACKTRACE = stacktrace;
+
         dir = new Directory(rootPage); // can throw exceptions
         dataTracker = new ConcurrentDataTracker();
-        this.console = console;
+        this.prompt = prompt;
         this.treeView = treeView;
 
+        prompt.println("ready -> ./<crawl> init\n", Collections.singletonList("yellow-green-text"),
+                9, 23, Collections.singletonList("sky-blue-text"));
     }
 
     /**
@@ -94,14 +103,12 @@ public class Crawler {
 
         @Override
         public void run() {
-
             try {
-                // connect to url through instance variable
+
                 Document doc =
                         Jsoup.connect(urlToCrawl).
                                 timeout(60 * 1000).
-                                userAgent("Mozilla/10.0 (Windows NT 10.0) AppleWebKit/538.36 (KHTML, like Gecko) Chrome/69.420 Safari/537.36").
-                      //          ignoreHttpErrors(true).
+                                userAgent(userAgent).
                                 get();
 
                 // get all a[href]
@@ -117,11 +124,10 @@ public class Crawler {
                         continue;
                     }
                     // if url hasn't already been saved -> submit a new Runnable
-                    if (visitedUrls.add(nextUrl)) {
-                        crawlPool.submit(new Crawl(nextUrl));
+                    if (urlsToCrawl.add(nextUrl)) {
+                        crawlThreadPool.submit(new Crawl(nextUrl));
                     }
                 }
-
                 // get all link[rel=stylesheet]
                 Elements links = doc.select("link[rel=stylesheet]");
                 // loop over link collection
@@ -132,18 +138,51 @@ public class Crawler {
                     currentLink.attr("href", "../assets/css/" + absUrl.hashCode() + ".css");
                 }
 
-                // submit modified document as a Runnable to be written to local drive
-                writePool.submit(new Write(doc));
-            }
+                if (DOWNLOAD_IMAGES) {
 
-            catch (IOException ex) {
-                System.err.println(ex.getMessage() + ": " + urlToCrawl);
+                    Elements images = doc.select("picture source[srcSet], img[srcSet]");
+                    for (Element e : images) {
+                        String url;
+
+                        if (e.attr("src").equals("") && !e.attr("srcSet").equals("")) {
+                            url = CrawlUtils.convertSrcSetToUrl(e.attr("srcSet"));
+                        } else if (!e.attr("src").equals("") && e.attr("srcSet").equals("")) {
+                            url = e.attr("src");
+                        } else {
+                            url = CrawlUtils.convertSrcSetToUrl(e.attr("srcSet"));
+                        }
+
+                        e.parent().append("<img src=" + '"' + url + '"' + ">");
+                        e.remove();
+                    }
+
+                    images = doc.select("img[src]");
+                    for (Element img : images) {
+                        String url = img.absUrl("src");
+
+                        String extensionType = CrawlUtils.getExtensionType(url);
+
+                        if (!extensionType.equals("noContentType")) {
+                            img.attr("src", "../assets/images/" + url.hashCode() + "." + extensionType);
+                            uniqueImageUrls.add(url);
+                        } else {
+                            img.attr("alt", "noContentType found");
+                        }
+
+                    }
+                } // end of if (DOWNLOAD_IMAGES)
+
+                writeThreadPool.submit(new Write(doc));
+            } catch (IOException ex) {
+                if (STACKTRACE) {
+                    prompt.println(ex.getMessage() + ": " + urlToCrawl + "\n", Collections.singletonList("red-text"));
+                }
             }
         }
     }
 
     /**
-     * Write class implements interface Runnable and will be instantiated and executed for every unique url found
+     * Write class is responsible for writing a crawled JSoup Document to file
      */
     private class Write implements Runnable {
         private final Document document;
@@ -154,61 +193,21 @@ public class Crawler {
 
         @Override
         public void run() {
-
-            if (iteratorCount.get() <= NUMBER_OF_URLS) {
+            if (iteratorCount.get() <= (NUMBER_OF_URLS - NUMBER_OF_CRAWLERS)) {
 
                 try {
-
-                    if (DOWNLOAD_IMAGES) {
-
-                        Elements images = document.select("picture source[srcSet], img[srcSet]");
-                        for (Element e : images) {
-                            String url;
-
-                            if (e.attr("src").equals("") && !e.attr("srcSet").equals("")) {
-                                url = convertSrcSetToUrl(e.attr("srcSet"));
-                            } else if (!e.attr("src").equals("") && e.attr("srcSet").equals("")) {
-                                url = e.attr("src");
-                            } else {
-                                url = convertSrcSetToUrl(e.attr("srcSet"));
-                            }
-
-                            e.parent().append("<img src=" + '"' + url + '"' + ">");
-                            e.remove();
-
-                        }
-
-                        images = document.select("img[src]");
-                        for (Element img : images) {
-                            String url = img.absUrl("src");
-
-                            String extensionType = getExtensionType(url);
-
-                            if (!extensionType.equals("noContentType")) {
-                                img.attr("src", "../assets/images/" + url.hashCode() + "." + extensionType);
-                                imgList.add(url);
-                            }
-                            else {
-                                img.attr("alt", "noContentType found");
-                            }
-
-                        }
-                    } // end of if (DOWNLOAD_IMAGES)
-
                     FileWriter writer = new FileWriter(new File(dir.getHtmlFolder().getAbsolutePath() + "\\" + document.location().hashCode() + ".html"));
                     writer.write(document.html());
                     writer.close();
-                }
-                catch (IOException ex) {
+                } catch (IOException ex) {
                     ex.printStackTrace();
-                }
-                finally {
+                } finally {
                     iteratorCount.incrementAndGet();
                 }
 
             } else { // end of iteratorCount <= NUMBER_OF_URLS
 
-                if (!threadsTerminated.get()) {
+                if (!writeThreadPool.isShutdown()) {
                     shutdownExecutorService(); // is synchronized
                 }
             }
@@ -216,6 +215,7 @@ public class Crawler {
     }
 
     /**
+     * ImageDownloader is responsible for downloading an Image from a URL
      */
     private class ImageDownloader implements Runnable {
         private final String url;
@@ -224,11 +224,10 @@ public class Crawler {
             this.url = url;
         }
 
-        // needs to call shutdown when done
         @Override
         public void run() {
-
             try {
+
                 byte[] bytes = Jsoup.connect(url).
                         timeout(60 * 1000).
                         userAgent("Mozilla").
@@ -238,7 +237,7 @@ public class Crawler {
 
                 ByteBuffer buffer = ByteBuffer.wrap(bytes);
 
-                String fileName = dir.getImagesFolder().getAbsolutePath() + "\\" + url.hashCode() + "." + getExtensionType(url);
+                String fileName = dir.getImagesFolder().getAbsolutePath() + "\\" + url.hashCode() + "." + CrawlUtils.getExtensionType(url);
 
                 String[] fileNameParts = fileName.split("\\.");
                 String format = fileNameParts[fileNameParts.length - 1];
@@ -250,28 +249,28 @@ public class Crawler {
                 bufferedImage = ImageIO.read(in);
                 ImageIO.write(bufferedImage, format, file);
 
+            } catch (IOException | IllegalArgumentException ex) {
+                if (STACKTRACE) {
+                    prompt.println(
+                            ex.getMessage() + ": " + url + "[." + CrawlUtils.getExtensionType(url) + "]\n",
+                            Collections.singletonList("red-text"));
+                }
+            } finally {
+                imageIteratorCount.incrementAndGet();
             }
-            catch (IOException | IllegalArgumentException ex) {
-                System.err.println(ex.getMessage() + ": " + url + " [." + getExtensionType(url) + "]");
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-            }
-
         }
-
     }
 
     /**
-     * downloads all stylesheets found in rootPage, initiated by init method.
+     * downloads all stylesheets found in rootPage, called by this::init prior to crawl start.
      */
-    private void downloadStylesheet() {
+    private void downloadStylesheets() {
         try {
 
             Document doc = Jsoup.
                     connect(rootPage).
                     timeout(30 * 1000).
-                    userAgent("Mozilla/10.0 (Windows NT 10.0) AppleWebKit/538.36 (KHTML, like Gecko) Chrome/69.420 Safari/537.36").
+                    userAgent(userAgent).
                     get();
 
             Elements links = doc.select("link[rel=stylesheet]");
@@ -294,35 +293,36 @@ public class Crawler {
     }
 
     /**
-     * shuts down the crawling process - called by Runnable Writer or by user if called through GUI
+     * shuts down the crawling process - called by Runnable Writer or by user if called through gui
      */
     private synchronized void shutdownExecutorService() {
-        threadsTerminated.set(true);
-        crawlPool.shutdownNow();
-        writePool.shutdownNow();
+        crawlThreadPool.shutdownNow();
+        writeThreadPool.shutdownNow();
         setTimePassed(CrawlType.HTML);
-        /* not ran by fxApplicationThread */
 
         if (DOWNLOAD_IMAGES) {
             // wonky solution attempt ->
             ExecutorService executorService = Executors.newFixedThreadPool(1);
             executorService.execute(() -> {
-                ExecutorService imageThreadPool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
-                imageThreadsTerminated = new AtomicBoolean(false);
                 imageStartTime = System.nanoTime();
+                imageThreadPool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
 
-                for (String url : imgList) {
+                for (String url : uniqueImageUrls) {
                     imageThreadPool.submit(new ImageDownloader(url));
                 }
-
                 imageThreadPool.shutdown();
 
                 try {
                     imageThreadPool.awaitTermination(Integer.MAX_VALUE, TimeUnit.HOURS);
-                    imageThreadsTerminated.set(true);
                     setTimePassed(CrawlType.IMAGE);
-                    console.println(String.format("crawl executed in %.2f s", (System.nanoTime() - startTime) * Math.pow(10, -9)));
-                    updateControllerTreeView();
+                    String timeElapsed = String.valueOf(Math.round((System.nanoTime() - startTime) * Math.pow(10, -9)));
+                    String promptOutput = "crawl executed in " + timeElapsed + " s -> ./crawl status";
+                    prompt.println(promptOutput,
+                            Collections.singletonList("gray-text"),
+                            0, 14, Arrays.asList("yellow-text", "big-font"),
+                            promptOutput.length() - 14, promptOutput.length(), Collections.singletonList("sky-blue-text"));
+                    prompt.lineSeparator();
+                  //  updateControllerTreeView();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                 }
@@ -332,13 +332,20 @@ public class Crawler {
         } // end of DOWNLOAD_IMAGES
 
         else {
-            console.println(String.format("crawl executed in %.2fs", (System.nanoTime() - startTime) * Math.pow(10, -9)));
-            updateControllerTreeView();
+            String timeElapsed = String.valueOf(Math.round((System.nanoTime() - startTime) * Math.pow(10, -9)));
+            String promptOutput = "crawl executed in " + timeElapsed + " s -> ./crawl status";
+            prompt.println(promptOutput,
+                    Collections.singletonList("gray-text"),
+                    0, 14, Arrays.asList("yellow-text", "big-font"),
+                    promptOutput.length() - 14, promptOutput.length(), Collections.singletonList("sky-blue-text"));
+            prompt.lineSeparator();
         }
+        crawlExeDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+      //  updateControllerTreeView();
     }
 
     /**
-     * updates the GUI's treeView to display updated domains, runs after crawl finishes.
+     * updates the gui's treeView to display updated domains, runs after crawl finishes.
      */
     private synchronized void updateControllerTreeView() {
         // block-head solution ->
@@ -346,25 +353,23 @@ public class Crawler {
 
             String action = "domain + year + month + day";
             TreeItem<String> domainTreeItem = new TreeItem<>(dir.getName());
-            TreeItem<String> yearTreeItem   = new TreeItem<>(dir.getYear());
-            TreeItem<String> monthTreeItem  = new TreeItem<>(dir.getMonth());
-            TreeItem<String> dayTreeItem    = new TreeItem<>(dir.getDay());
+            TreeItem<String> yearTreeItem = new TreeItem<>(dir.getYear());
+            TreeItem<String> monthTreeItem = new TreeItem<>(dir.getMonth());
+            TreeItem<String> dayTreeItem = new TreeItem<>(dir.getDay());
 
+            // Todo: -> Throws NullPointerException! fix!
             for (TreeItem<String> currentDomainItem : treeView.getRoot().getChildren()) {
                 if (currentDomainItem.getValue().equals(dir.getName())) {
-                    // Todo: DOMAIN ALREADY EXISTS
                     action = "year + month + day";
                     domainTreeItem = currentDomainItem;
 
                     for (TreeItem<String> currentYearItem : currentDomainItem.getChildren()) {
                         if (currentYearItem.getValue().equals(dir.getYear())) {
-                            // Todo: YEAR ALREADY EXISTS
                             action = "month + day";
                             yearTreeItem = currentYearItem;
 
                             for (TreeItem<String> currentMonthItem : currentYearItem.getChildren()) {
                                 if (currentMonthItem.getValue().equals(dir.getMonth())) {
-                                    // Todo: MONTH ALREADY EXISTS
                                     // ADD ONLY DAY
                                     action = "day";
                                     monthTreeItem = currentMonthItem;
@@ -432,65 +437,112 @@ public class Crawler {
      * starts the crawling process
      */
     public void init() {
+        initialized = true;
+
         writeRootUrl(rootPage, dir.getHomeFolder().getAbsolutePath());
-        downloadStylesheet();
-        console.println("crawl initiated");
+        downloadStylesheets();
+
         startTime = System.nanoTime();
-        crawlPool.execute(new Crawl(rootPage));
+        prompt.println("root dependencies setup finished -> crawl initiated\n", Collections.singletonList("yellow-green-text"));
+        crawlThreadPool.submit(new Crawl(rootPage));
     }
 
     /**
      * shuts down the crawling process if is not already threadsTerminated - called by fxApplicationThread
      */
     public void shutdown() {
-        if (!threadsTerminated.get()) {
-            shutdownExecutorService();
-        } else {
-            console.println("shutdownNow already invoked");
+        if (initialized) {
+            if (!crawlThreadPool.isTerminated() || (imageThreadPool != null && !imageThreadPool.isTerminated())) {
+                shutdownExecutorService();
+            } else {
+                prompt.println("crawler is already shutdown\n", Collections.singletonList("orange-text"));
+            }
+        }
+        else {
+            prompt.println("crawler has not been initialized\n", Collections.singletonList("orange-text"));
         }
     }
 
     /**
      * appends the console component with data on current or most recent crawl
      */
-    public void printlnData() {
-        if (!threadsTerminated.get()) { // == Thread is running
-            setTimePassed(CrawlType.HTML);
-        }
-
-        console.println(dataTracker.getData(timePassed, NUMBER_OF_URLS, dir.getHtmlFolder().getAbsolutePath()));
-    }
-
-    public void printData() {
-        if (!threadsTerminated.get()) { // == Thread is running
-            setTimePassed(CrawlType.HTML);
-        }
-
-        console.print(dataTracker.getData(timePassed, NUMBER_OF_URLS, dir.getHtmlFolder().getAbsolutePath()));
-    }
-
-    public void printlnImageData() {
-        if (imageThreadsTerminated != null) {
-            if (!imageThreadsTerminated.get()) { // Thread is running
-                setTimePassed(CrawlType.IMAGE);
+    public void printCrawlData() {
+        if (initialized) {
+            if (!crawlThreadPool.isTerminated()) {
+                setTimePassed(CrawlType.HTML);
             }
+            prompt.println(dataTracker.getCrawlData(
+                    timePassed, iteratorCount.get(), NUMBER_OF_URLS, CrawlType.HTML) + "\n", Collections.singletonList("yellow-green-text"));
+        }
+        else {
+            prompt.println("crawler has not been initialized\n", Collections.singletonList("orange-text"));
         }
 
-        console.println(dataTracker.getImageData(imageTimePassed, imgList.size(), dir.getImagesFolder().getAbsolutePath()));
     }
 
     public void printImageData() {
-        if (imageThreadsTerminated != null) {
-            if (!imageThreadsTerminated.get()) { // Thread is running
+        if (initialized) {
+            if (imageThreadPool != null && !imageThreadPool.isTerminated()) {
                 setTimePassed(CrawlType.IMAGE);
             }
+            if (DOWNLOAD_IMAGES) {
+                prompt.println(dataTracker.getCrawlData(
+                        imageTimePassed, imageIteratorCount.get(), uniqueImageUrls.size(), CrawlType.IMAGE) + "\n", Collections.singletonList("yellow-green-text"));
+            } else {
+                prompt.println("crawler has not been instructed to crawl for images\n", Collections.singletonList("orange-text"));
+            }
+        }
+        else {
+            prompt.println("crawler has not been initialized\n", Collections.singletonList("orange-text"));
         }
 
-        console.print(dataTracker.getImageData(imageTimePassed, imgList.size(), dir.getImagesFolder().getAbsolutePath()));
     }
 
-    public boolean isDOWNLOAD_IMAGES() {
-        return DOWNLOAD_IMAGES;
+    public void printData() {
+        if (initialized) {
+            String str = "\n";
+
+            if (!crawlThreadPool.isTerminated()) {
+                setTimePassed(CrawlType.HTML);
+            }
+
+            if (DOWNLOAD_IMAGES) {
+                str = "";
+            }
+
+            prompt.println(dataTracker.getCrawlData(
+                    timePassed, iteratorCount.get(), NUMBER_OF_URLS, CrawlType.HTML) + str, Collections.singletonList("yellow-green-text"));
+
+            if (imageThreadPool != null && !imageThreadPool.isTerminated()) {
+                setTimePassed(CrawlType.IMAGE);
+            }
+
+            if (DOWNLOAD_IMAGES) {
+                prompt.println(dataTracker.getCrawlData(
+                        imageTimePassed, imageIteratorCount.get(), uniqueImageUrls.size(), CrawlType.IMAGE) + "\n", Collections.singletonList("yellow-green-text"));
+            }
+        }
+        else {
+            prompt.println("crawler has not been initialized\n", Collections.singletonList("orange-text"));
+        }
+    }
+
+    public void printStatus() {
+        if (initialized) {
+            prompt.println(rootPage + ", " + NUMBER_OF_CRAWLERS + ", " + NUMBER_OF_URLS + ", " + DOWNLOAD_IMAGES,
+                    Collections.singletonList("yellow-green-text"));
+            prompt.println("dir setup on: " + dir.getDirInitDate(), Collections.singletonList("sky-blue-text"));
+            prompt.println("crawl init on: " + crawlInitDate, Collections.singletonList("sky-blue-text"));
+            if (crawlExeDate != null) {
+                prompt.println("crawl exe on: " + crawlExeDate + "\n", Collections.singletonList("yellow-text"));
+            }
+            else {
+                prompt.lineSeparator();
+            }
+        }
+        else {
+            prompt.println("crawler has not been initialized\n", Collections.singletonList("orange-text"));
+        }
     }
 
 }

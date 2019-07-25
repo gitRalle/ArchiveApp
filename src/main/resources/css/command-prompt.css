@@ -1,0 +1,75 @@
+
+.virtualized-scroll-pane {
+    -fx-background-color: null;
+    -fx-padding: 0;
+    -fx-cursor: default;
+}
+
+.virtualized-scroll-pane > .scroll-bar:horizontal {
+    -fx-background-radius: 0 0 2 2;
+}
+
+.virtualized-scroll-pane > .scroll-bar:vertical {
+    -fx-background-radius: 0 2 2 0;
+}
+
+.virtualized-scroll-pane > .corner {
+    -fx-background-radius: 0 0 2 0;
+}
+
+/* default area */
+.styled-text-area {
+    -fx-background-color: rgb(48, 10, 36);
+    -fx-padding: 0.25em 0.583em 0.583em 0;
+    -fx-cursor: text;
+}
+
+/* default text -> */
+.text {
+    -fx-font-family: "Monospaced"; /* Lucida Console */
+    -fx-font-size: 13px;
+    -fx-fill: rgb(255, 255, 255); /* rgb(192, 192, 192) */
+}
+
+/* default caret */
+.caret {
+    -fx-stroke: white;
+}
+
+/* custom styles */
+.red-text {
+    -fx-fill: red;
+}
+
+.orange-text {
+    -fx-fill: orange;
+}
+
+.gray-text {
+    -fx-fill: gray;
+}
+
+.yellow-green-text {
+    -fx-fill: yellowgreen;
+}
+
+.green-text {
+    -fx-fill: green;
+}
+
+.light-green-text {
+    -fx-fill: lightgreen;
+}
+
+.yellow-text {
+    -fx-fill: yellow;
+}
+
+.sky-blue-text {
+    -fx-fill: skyblue;
+}
+
+.big-font {
+    -fx-font-size: 16px;
+}
+

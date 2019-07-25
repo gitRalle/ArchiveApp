@@ -1,12 +1,16 @@
 apply plugin : 'java'
 apply plugin : 'application'
-mainClassName = 'GUI/ArchiveApp'
+
+mainClassName = 'ArchiveApp'
 
 sourceSets {
     main {
-        resources {
+        java {
             srcDirs = ["src/main/java"]
-            includes = ["**/*.fxml", "**/*.css"]
+        }
+        resources {
+            srcDirs = ["src/main/resources"]
+            includes = ["**/*.fxml", "**/*.css", "**/*.png"]
         }
     }
 }
@@ -16,19 +20,25 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.lalyos:jfiglet:0.0.8'
-    compile 'de.jensd:fontawesomefx-commons:11.0'
-    compile 'de.jensd:fontawesomefx-controls:11.0'
-    compile 'de.jensd:fontawesomefx-emojione:2.2.7-11'
-    compile 'de.jensd:fontawesomefx-fontawesome:4.7.0-11'
-    compile 'de.jensd:fontawesomefx-icons525:3.0.0-11'
-    compile 'de.jensd:fontawesomefx-materialdesignfont:1.7.22-11'
-    compile 'de.jensd:fontawesomefx-materialicons:2.2.0-11'
-    compile 'de.jensd:fontawesomefx-materialstackicons:2.1-11'
-    compile 'de.jensd:fontawesomefx-octicons:4.3.0-11'
-    compile 'de.jensd:fontawesomefx-weathericons:2.0.10-11'
-    compile group: 'org.fxmisc.richtext', name: 'richtextfx', version: '0.10.1' 
-    compile 'org.jsoup:jsoup:1.12.1'
+    def withoutFx = { exclude group: 'org.openjfx' }
+    compile group: 'com.github.lalyos', name: 'jfiglet', version: '0.0.8'
+    compile group: 'de.jensd', name: 'fontawesomefx-commons', version: '11.0', withoutFx
+    compile group: 'de.jensd', name: 'fontawesomefx-controls', version: '11.0', withoutFx
+    compile group: 'de.jensd', name: 'fontawesomefx-emojione', version: '2.2.7-11', withoutFx
+    compile group: 'de.jensd', name: 'fontawesomefx-fontawesome', version: '4.7.0-11', withoutFx
+    compile group: 'de.jensd', name: 'fontawesomefx-icons525', version: '3.0.0-11', withoutFx
+    compile group: 'de.jensd', name: 'fontawesomefx-materialdesignfont', version: '1.7.22-11', withoutFx
+    compile group: 'de.jensd', name: 'fontawesomefx-materialicons', version: '2.2.0-11', withoutFx
+    compile group: 'de.jensd', name: 'fontawesomefx-materialstackicons', version: '2.1-11', withoutFx
+    compile group: 'de.jensd', name: 'fontawesomefx-octicons', version: '4.3.0-11', withoutFx
+    compile group: 'de.jensd', name: 'fontawesomefx-weathericons', version: '2.0.10-11', withoutFx
+    compile group: 'org.fxmisc.richtext', name: 'richtextfx', version: '0.10.1'
+    compile group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
     compile group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
+
+    compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.11'
+    compile group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
+    compile group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
+    compile group: 'javax.activation', name: 'activation', version: '1.1.1'
     compile fileTree(dir: 'lib', include: ['*.jar'])
 }

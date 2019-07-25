@@ -1,0 +1,25 @@
+.root {
+    -fx-background-color: white;
+    -fx-border-color: lightblue;
+}
+
+.search-field, .count-field {
+    -fx-background-color: -fx-control-inner-background;
+    -fx-text-box-border: transparent;
+}
+
+.search-field:focused, .count-field:focused {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.up-button, .down-button {
+    -fx-background-color: transparent;
+}
+
+.up-button:hover, .down-button:hover {
+}
+
+.exit-button {
+    -fx-border-radius: 50px;
+}

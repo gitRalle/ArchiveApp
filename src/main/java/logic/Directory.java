@@ -1,8 +1,6 @@
-package objects;
+package logic;
 
-import IO.IO;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
+import io.IO;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +8,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
 
@@ -19,6 +19,7 @@ public class Directory {
     private final String month;
     private final String day;
     private final LinkedHashMap<String, File> dirLinkedMap;
+    private final String dirInitDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
     Directory(String url) throws IOException {
         LocalDate now = LocalDate.now();
@@ -75,7 +76,7 @@ public class Directory {
 
     protected String getDay()   { return day;   }
 
-    protected File get(String key)   { return dirLinkedMap.get(key);         }
+    protected String getDirInitDate() { return dirInitDate; }
 
     protected File getHomeFolder()   { return dirLinkedMap.get("dayDir");    }
 

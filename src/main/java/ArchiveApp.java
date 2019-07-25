@@ -1,6 +1,4 @@
-package GUI;
-
-import IO.IO;
+import io.IO;
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -14,7 +12,6 @@ import javafx.scene.control.SplitPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
-
 import java.io.File;
 
 public class ArchiveApp extends Application {
@@ -25,19 +22,17 @@ public class ArchiveApp extends Application {
         launch(args);
     }
 
-
     @Override
     public void start(Stage stage) throws Exception {
         if (IO.readInitFile() == null)
             startArchiveInit(stage);
         else
             startArchiveApp(new Stage());
-
     }
 
     private void startArchiveInit(@NotNull Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("archiveappinit.fxml"));
-
+      //  Parent root = FXMLLoader.load(getClass().getResource("init.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/view/init.fxml"));
         Scene scene = new Scene(root);
 
         stage.setTitle("Archive App Init");
@@ -73,9 +68,9 @@ public class ArchiveApp extends Application {
     }
 
     private void startArchiveApp(@NotNull Stage stage) throws Exception {
-        /* load fxml file (GUI) and return reference to the scene graph's root node
+        /* load fxml file (gui) and return reference to the scene graph's root node
          * also instantiates the controller class specified in the fxml file */
-        Parent root = FXMLLoader.load(getClass().getResource("archiveapp.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/view/archiveapp.fxml"));
 
         // attach scene graph to scene
         Scene scene = new Scene(root);
@@ -86,7 +81,7 @@ public class ArchiveApp extends Application {
         stage.setScene(scene);
 
         SplitPane splitPane = (SplitPane) root.getChildrenUnmodifiable().get(0);
-        ChangeListener<Number> changeListener = new ChangeListener<Number>() {
+        ChangeListener<Number> changeListener = new ChangeListener<>() {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
                 splitPane.setDividerPositions(0.2);
@@ -107,5 +102,4 @@ public class ArchiveApp extends Application {
         stage.setMinWidth(stage.getWidth());
         stage.setMinHeight(stage.getHeight());
     }
-
 }

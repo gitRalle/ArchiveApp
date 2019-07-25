@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+
+<HBox fx:id="hBox" spacing="2.5" styleClass="root" stylesheets="@/css/search.css, @/css/font.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.SearchController">
+   <padding>
+      <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+   </padding>
+   <children>
+      <TextField fx:id="searchField" styleClass="search-field">
+         <HBox.margin>
+            <Insets />
+         </HBox.margin>
+      </TextField>
+      <TextField fx:id="countField" editable="false" maxWidth="50.0" styleClass="count-field">
+         <HBox.margin>
+            <Insets right="3.0" />
+         </HBox.margin></TextField>
+      <Separator styleClass="separator" orientation="VERTICAL" />
+      <Button fx:id="upButton" mnemonicParsing="false" prefWidth="25.0" styleClass="up-button" />
+      <Button fx:id="downButton" mnemonicParsing="false" prefWidth="25.0" styleClass="down-button" />
+      <Button fx:id="exitButton" mnemonicParsing="false" prefWidth="25.0" styleClass="exit-button" />
+   </children>
+</HBox>

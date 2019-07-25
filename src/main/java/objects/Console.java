@@ -1,4 +1,4 @@
-package GUI;
+package objects;
 
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static GUI.GUIUtils.runSafe;
+import static utils.GUIUtils.runSafe;
 
 public class Console extends BorderPane {
     protected final TextArea textArea = new TextArea();
@@ -78,7 +78,7 @@ public class Console extends BorderPane {
     }
 
     public void clear() {
-        runSafe(() -> textArea.clear());
+        runSafe(textArea::clear);
     }
 
     public void print(final String text) {

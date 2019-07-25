@@ -29,7 +29,7 @@
             <Font name="System Bold" size="18.0" />
          </font>
       </Label>
-      <Button fx:id="selectButton" mnemonicParsing="false" text="Select Folder" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="5">
+      <Button fx:id="selectButton" mnemonicParsing="false" text="Select Directory" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="5">
          <GridPane.margin>
             <Insets bottom="8.0" left="8.0" right="8.0" />
          </GridPane.margin></Button>
@@ -43,7 +43,7 @@
             <Insets bottom="5.0" />
          </GridPane.margin>
       </Separator>
-      <TextArea fx:id="textArea" prefHeight="200.0" prefWidth="200.0" text="Select your home folder, which will deterimine where all of your archived files will be saved and viewed from." wrapText="true" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="3">
+      <TextArea fx:id="textArea" prefHeight="200.0" prefWidth="200.0" text="Select your home folder, which will determine where all of your archived files will be saved and viewed from." wrapText="true" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="3">
          <GridPane.margin>
             <Insets bottom="20.0" left="100.0" right="100.0" top="20.0" />
          </GridPane.margin>

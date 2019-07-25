@@ -1,4 +1,4 @@
-package GUI;
+package utils;
 
 import javafx.application.Platform;
 

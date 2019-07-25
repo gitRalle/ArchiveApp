@@ -1,0 +1,55 @@
+.grid-pane {
+    -fx-font-family: "MS Serif"; /* Tahoma, Geneva || Trebuchet MS || MS Serif */
+    -fx-font-size: 13px;
+    -fx-background-color: rgb(48, 10, 36);
+}
+
+.tab-pane *.tab-header-area *.tab-header-background {
+    -fx-background-color: rgb(48, 10, 36);
+}
+
+.tab-pane {
+    -fx-background-color: white;
+    -fx-font-size: 12px;
+    -fx-tab-min-width:120px;
+    -fx-tab-max-width:120px;
+}
+
+.tree-view {
+    -fx-background-color: rgb(48, 10, 36);
+}
+
+.tree-view .tree-cell {
+    -fx-background-color: rgb(48, 10, 36);
+    -fx-text-fill: white;
+}
+
+.tree-view .tree-cell:selected {
+    -fx-background-color: coral;
+    -fx-text-fill: white;
+}
+
+.tree-cell > .tree-disclosure.node > .arrow {
+    -fx-background-color: white;
+}
+
+.tree-cell:expanded > .tree-disclosure.node > .arrow {
+    -fx-background-color: white;
+}
+
+.text-flow-label {
+    -fx-text-fill: white;
+}
+
+.button-bar Button {
+    -fx-background-color: transparent;
+}
+
+.button-bar Button:hover {
+    -fx-background-color: rgba(0,0,0,1.0)
+}
+
+.search-field {
+    -fx-font-size: 12px;
+    -fx-padding: 2 2 2 4;
+}
