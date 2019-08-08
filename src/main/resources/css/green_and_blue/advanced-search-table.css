@@ -1,0 +1,107 @@
+.grid-pane {
+    -fx-font-family: "MS Serif"; /* Tahoma, Geneva || Trebuchet MS || MS Serif */
+    -fx-font-size: 12px;
+    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+    -fx-background-radius: 3px, 3px, 2px, 1px;
+    -fx-background-color: #262626;
+}
+
+.label {
+    -fx-text-fill: #FFF;
+}
+
+.table-view {
+    -fx-background-color: #262626;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #262626;
+}
+
+.table-view .column-header-background .label{
+    -fx-background-color: transparent;
+    -fx-text-fill: #0ed9e0;
+}
+
+.table-view .table-cell{
+    -fx-text-fill: #0ed9e0;
+    -fx-alignment: center;
+}
+
+.table-row-cell{
+    -fx-background-color: -fx-table-cell-border-color, #2b2a2a;
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-padding: 0.0em; /* 0 */
+}
+
+.table-row-cell:odd{
+    -fx-background-color: -fx-table-cell-border-color, #262626;
+    -fx-background-insets: 0, 0 0 1 0;
+
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #005797;
+    -fx-background-insets: 0;
+    -fx-background-radius: 1;
+}
+
+.table-view > .virtual-flow > .scroll-bar:vertical,
+.table-view > .virtual-flow > .scroll-bar:vertical > .track,
+.table-view > .virtual-flow > .scroll-bar:vertical > .track-background,
+.table-view > .virtual-flow > .scroll-bar:horizontal,
+.table-view > .virtual-flow > .scroll-bar:horizontal > .track,
+.table-view > .virtual-flow > .scroll-bar:horizontal > .track-background {
+    -fx-background-color: transparent;
+}
+
+.table-view > .virtual-flow > .scroll-bar > .increment-button,
+.table-view > .virtual-flow > .scroll-bar > .decrement-button {
+    -fx-opacity: 0;
+}
+
+.back-button, .open-button {
+    -fx-background-color: transparent;
+}
+
+.column-matches-icon {
+    -glyph-name: "CHECK";
+    -glyph-size: 16px;
+    -icons-color: yellowgreen;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(green, 30%) 85%);
+}
+
+.back-button-icon {
+    -glyph-name: "LONG_ARROW_LEFT";
+    -glyph-size: 30px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(#0ed9e0, 30%) 85%);
+}
+
+.back-button-icon:hover {
+    -icons-color: #0ed9e0;
+}
+
+.open-button-icon {
+    -glyph-name: "EXTERNAL_LINK";
+    -glyph-size: 24px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(#0ed9e0, 30%) 85%);
+}
+
+.open-button-icon:hover {
+    -icons-color: #0ed9e0;
+}
+
+.back-button-icon:pressed, .open-button-icon:pressed {
+   -fx-effect: dropshadow(three-pass-box,
+               rgba(156,115,241,0.6), 10, 0, 0, 0);
+}

@@ -4,8 +4,23 @@
     -fx-background-color: rgb(48, 10, 36);
 }
 
+.menu-bar {
+    -fx-background-color: rgba(48, 10, 36, 0.7);
+    -fx-border-color: transparent transparent white transparent;
+    -fx-border-width: 0.75;
+}
+
+.menu-bar .label {
+    -fx-text-fill: white;
+}
+
+
 .tab-pane *.tab-header-area *.tab-header-background {
     -fx-background-color: rgb(48, 10, 36);
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab {
+      -fx-shape: "M300,290 L310,168 L410,168 L421,290 L300,290 z";
 }
 
 .tab-pane {
@@ -29,12 +44,31 @@
     -fx-text-fill: white;
 }
 
-.tree-cell > .tree-disclosure.node > .arrow {
-    -fx-background-color: white;
+.tree-view .tree-cell > .tree-disclosure-node > .arrow {
+    -fx-background-color: #FAB;
 }
 
-.tree-cell:expanded > .tree-disclosure.node > .arrow {
-    -fx-background-color: white;
+
+.context-menu {
+    -fx-background-color: rgb(48, 10, 36);
+    -fx-font-size: 13px;
+    -fx-text-fill: white;
+}
+
+.context-menu .separator {
+    -fx-background-color: coral;
+    -fx-fill: coral;
+}
+.menu-item .label {
+    -fx-text-fill: white;
+}
+
+.menu-item:focused {
+    -fx-background-color: rgba(0,0,0,1.0)
+}
+
+.menu-item:focused .label {
+    -fx-text-fill: white;
 }
 
 .text-flow-label {

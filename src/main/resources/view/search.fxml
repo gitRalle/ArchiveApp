@@ -6,7 +6,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 
-<HBox fx:id="hBox" spacing="2.5" styleClass="root" stylesheets="@/css/search.css, @/css/font.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.SearchController">
+<HBox fx:id="hBox" spacing="2.5" styleClass="root" stylesheets="@/css/purple_and_white/search.css, @/css/purple_and_white/font.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.SearchController">
    <padding>
       <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
    </padding>

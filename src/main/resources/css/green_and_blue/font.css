@@ -1,0 +1,163 @@
+.glyph-icon:hover {
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0, 2), 4, 0, 0, 0);
+}
+
+.hide-button-icon {
+    -glyph-name: "ARROWS_H";
+    -glyph-size: 15px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.advanced-search-button-icon {
+    -glyph-name: "SEARCH_PLUS";
+    -glyph-size: 15px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(orange, 30%) 85%);
+}
+
+.prompt-button-icon {
+    -glyph-name: "TERMINAL";
+    -glyph-size: 15px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(blueviolet, 30%) 85%);
+}
+
+
+.up-button-icon {
+    -glyph-name: "ANGLE_UP";
+}
+
+.down-button-icon {
+    -glyph-name: "ANGLE_DOWN";
+}
+
+.exit-button-icon {
+    -glyph-name: "TIMES";
+}
+
+.root-icon {
+    -glyph-name: "FOLDER_OPEN_ALT";
+    -icons-color: orange;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%,
+                      derive(-icons-color, 100%) 30%, derive(orange, 30%) 85%);
+}
+
+.branch-icon {
+    -glyph-name: "FOLDER_ALT";
+    -icons-color: skyblue;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%,
+            derive(-icons-color, 100%) 30%, derive(blueviolet, 30%) 85%);
+}
+
+.leaf-icon {
+    -glyph-name: "FILE_ALT";
+    -icons-color: yellowgreen;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%,
+            derive(-icons-color, 100%) 30%, derive(yellowgreen, 30%) 85%);
+}
+
+.about-menu-item-icon {
+    -glyph-name: "INFO_CIRCLE";
+    -glyph-size: 13px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.code-menu-icon {
+    -glyph-name: "CODE";
+    -glyph-size: 13px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.html-menu-item-icon {
+    -glyph-name: "HTML5";
+    -glyph-size: 13px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.css-menu-item-icon {
+    -glyph-name: "CSS3";
+    -glyph-size: 13px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.js-menu-item-icon {
+    -glyph-name: "JSFIDDLE";
+    -glyph-size: 13px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.delete-menu-item-icon {
+    -glyph-name: "TRASH_ALT";
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.about-icon {
+    -glyph-name: "BUG";
+    -glyph-size: 26px;
+    -icons-color: black;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.first-row-label-icon {
+    -glyph-name: "SITEMAP";
+    -glyph-size: 14px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.second-row-label-icon {
+    -glyph-name: "IMAGE";
+    -glyph-size: 14px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.third-row-label-icon {
+    -glyph-name: "HOURGLASS";
+    -glyph-size: 14px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.fourth-row-label-icon {
+    -glyph-name: "CHECK";
+    -glyph-size: 14px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+.about-button-icon {
+    -glyph-name: "CHECK";
+    -glyph-size: 22px;
+    -icons-color: white;
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(red, 30%) 85%);
+}
+
+
+
+

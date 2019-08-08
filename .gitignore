@@ -28,3 +28,6 @@ ArchiveApp.iml
 
 # Ignore out folder
 out
+
+# Ignore .txt extensions
+.txt

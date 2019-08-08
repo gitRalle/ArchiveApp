@@ -34,11 +34,7 @@ dependencies {
     compile group: 'de.jensd', name: 'fontawesomefx-weathericons', version: '2.0.10-11', withoutFx
     compile group: 'org.fxmisc.richtext', name: 'richtextfx', version: '0.10.1'
     compile group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
+    compile group: 'org.controlsfx', name: 'controlsfx', version: '11.0.0', withoutFx
     compile group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
-
-    compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.11'
-    compile group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
-    compile group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
-    compile group: 'javax.activation', name: 'activation', version: '1.1.1'
     compile fileTree(dir: 'lib', include: ['*.jar'])
 }

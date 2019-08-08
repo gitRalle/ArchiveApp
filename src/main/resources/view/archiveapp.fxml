@@ -15,7 +15,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.TextFlow?>
 
-<GridPane fx:id="gridPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" onKeyPressed="#handleKeyEventOnGridPane" prefHeight="480.0" prefWidth="650.0" styleClass="grid-pane" stylesheets="@/css/archiveapp.css, @/css/font.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.ArchiveAppController">
+<GridPane fx:id="gridPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" onKeyPressed="#handleKeyEventOnGridPane" prefHeight="480.0" prefWidth="650.0" styleClass="grid-pane" stylesheets="@/css/purple_and_white/archiveapp.css, @/css/purple_and_white/font.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.ArchiveAppController">
   <columnConstraints>
     <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="100.0" prefWidth="100.0" />
   </columnConstraints>
@@ -32,38 +32,32 @@
             </TabPane>
         </items>
       </SplitPane>
-      <MenuBar prefWidth="647.0">
+      <MenuBar prefWidth="647.0" styleClass="menu-bar">
         <menus>
-          <Menu mnemonicParsing="false" text="File">
+          <Menu mnemonicParsing="false" styleClass="menu" text="File">
             <items>
-              <MenuItem mnemonicParsing="false" text="Close" />
+              <MenuItem mnemonicParsing="false" styleClass="menu-item" text="Close" />
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" text="Edit">
+          <Menu mnemonicParsing="false" styleClass="menu" text="Edit">
             <items>
-              <MenuItem mnemonicParsing="false" text="Delete" />
+              <MenuItem mnemonicParsing="false" styleClass="menu-item" text="Delete" />
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" text="Help">
+          <Menu mnemonicParsing="false" styleClass="menu" text="Help">
             <items>
-              <MenuItem mnemonicParsing="false" text="About" />
+              <MenuItem mnemonicParsing="false" styleClass="menu-item" text="About" />
             </items>
           </Menu>
         </menus>
       </MenuBar>
-      <HBox fx:id="buttonBox" maxWidth="200.0" styleClass="button-bar" GridPane.halignment="RIGHT" GridPane.rowIndex="1" GridPane.valignment="CENTER">
-      <!--  <buttons> -->
+
+      <HBox maxWidth="200.0" styleClass="button-bar" GridPane.halignment="RIGHT" GridPane.rowIndex="1" GridPane.valignment="CENTER">
           <Button fx:id="hideButton" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#hideButtonClicked" prefHeight="22.0" prefWidth="33.0" styleClass="hide-button">
-              <!--
-              <graphic>
-                  <FontAwesomeIconView glyphName="ARROWS_H" glyphSize="13" />
-              </graphic>
-              -->
           </Button>
             <Button fx:id="promptButton" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#showPromptStage" prefHeight="22.0" prefWidth="33.0" styleClass="console-button">
             </Button>
-            <Button fx:id="advancedSearchButton" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="22.0" prefWidth="33.0" styleClass="advanced-search-button" />
-      <!--  </buttons> -->
+            <Button fx:id="advancedSearchButton" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="22.0" prefWidth="33.0" styleClass="advanced-search-button" onAction="#showAdvancedSearchStage" />
          <GridPane.margin>
             <Insets top="2.5" />
          </GridPane.margin>
@@ -71,7 +65,8 @@
             <Insets right="350.0" />
          </padding>
       </HBox>
-     <TextFlow fx:id="textFlow"  styleClass="text-flow" maxWidth="450.0" GridPane.rowIndex="1" GridPane.valignment="BASELINE" GridPane.vgrow="NEVER">
+
+     <TextFlow fx:id="textFlow" maxWidth="450.0" styleClass="text-flow" GridPane.rowIndex="1" GridPane.valignment="BASELINE" GridPane.vgrow="NEVER">
        <GridPane.margin>
            <Insets bottom="8.0" left="17.0" right="4.0" top="6.0" />
        </GridPane.margin>
@@ -83,7 +78,7 @@
          <children>
             <TextField fx:id="searchField" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="150.0" promptText="search" styleClass="search-field">
                <HBox.margin>
-                  <Insets left="40.0" top="2.0" />
+                  <Insets left="48.0" top="2.0" />
                </HBox.margin>
             </TextField>
          </children>

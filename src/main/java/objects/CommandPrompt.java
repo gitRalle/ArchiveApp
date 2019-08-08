@@ -32,14 +32,14 @@ public class CommandPrompt extends BorderPane {
         area.setWrapText(false);
 
         Nodes.addInputMap(area, InputMap.consume(keyPressed(ENTER), e -> {
-            String paragraphText = area.getText(area.getCurrentParagraph());
-            if (paragraphText != null && !paragraphText.equals("")) {
-                history.add(paragraphText);
+            String text = area.getText(area.getCurrentParagraph());
+            if (text != null && !text.equals("")) {
+                history.add(text);
                 historyPointer++;
             }
             area.appendText(System.lineSeparator());
-            if (onMessageReceivedHandler != null && paragraphText != null && !paragraphText.equals("")) {
-                onMessageReceivedHandler.accept(paragraphText);
+            if (onMessageReceivedHandler != null && text != null && !text.equals("")) {
+                onMessageReceivedHandler.accept(text);
             }
         }));
 

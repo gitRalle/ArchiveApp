@@ -1,0 +1,96 @@
+.grid-pane {
+    -fx-font-family: "MS Serif"; /* Tahoma, Geneva || Trebuchet MS || MS Serif */
+    -fx-font-size: 12px;
+    -fx-background-color: rgba(48, 10, 36, 0.1);
+    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+    -fx-background-radius: 3px, 3px, 2px, 1px;
+}
+
+.check-tree-view {
+    -fx-background-color: rgb(48, 10, 36);
+    -fx-padding: 0;
+    -fx-border-width: 1.2px;
+    -fx-border-color: rgb(48, 10, 36);
+    -fx-border-radius: 2.5px;
+}
+
+.check-tree-view .tree-cell {
+    -fx-background-color: rgb(48, 10, 36);
+    -fx-text-fill: white;
+}
+
+.check-tree-view .tree-cell > .tree-disclosure-node > .arrow {
+    -fx-background-color: #FAB;
+}
+
+.check-tree-view .tree-cell:focused {}
+
+.check-tree-view .tree-cell .check-box {}
+
+.check-tree-view .tree-cell .check-box .box {
+    -fx-inner-border: transparent;
+    -fx-outer-border: rgb(48, 10, 36);
+}
+
+.check-tree-view .tree-cell .check-box:selected .box {}
+
+.check-tree-view .tree-cell .check-box:selected .mark {
+    -fx-background-color: black;
+}
+
+.exit-button, .search-button {
+    -fx-background-color: transparent;
+}
+
+.search-text-field {
+    -fx-control-inner-background: rgba(48, 10, 36, 0.1);
+    -fx-faint-focus-color: transparent;
+    -fx-focus-color: transparent;
+    -fx-text-fill: black;
+}
+
+.check-tree-view > .virtual-flow > .scroll-bar:vertical,
+.check-tree-view > .virtual-flow > .scroll-bar:vertical .track,
+.check-tree-view > .virtual-flow > .scroll-bar:vertical > .track-background,
+.check-tree-view > .virtual-flow > .scroll-bar:horizontal,
+.check-tree-view >. virtual-flow > .scroll-bar:horizontal .track,
+.check-tree-view > .virtual-flow > .scroll-bar:horizontal > .track-background {
+    -fx-background-color: transparent;
+}
+
+.check-tree-view > .virtual-flow > .scroll-bar > .increment-button,
+.check-tree-view >. virtual-flow > .scroll-bar > .decrement-button {
+    -fx-opacity: 0;
+}
+
+.check-tree-view-icon {
+    -glyph-name: "PAGELINES";
+    -glyph-size: 150px;
+    -icons-color: rgb(48, 10, 36);
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(coral, 30%) 85%);
+}
+
+.search-button-icon {
+    -glyph-name: "SEARCH";
+    -glyph-size: 18px;
+    -icons-color: rgb(48, 10, 36);
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(rgba(48, 10, 36, 0.8), 30%) 85%);
+}
+
+.search-button-icon:hover {
+    -fx-fill: linear-gradient(-icons-color 0%, derive(coral, 30%) 85%);
+}
+
+.exit-button-icon{
+    -glyph-name: "TIMES";
+    -glyph-size: 18px;
+    -icons-color: rgb(48, 10, 36);
+    -fx-text-fill: -icons-color;
+    -fx-fill: linear-gradient(-icons-color 0%, derive(rgba(48, 10, 36, 0.8), 30%) 85%);
+}
+
+.exit-button-icon:hover {
+    -fx-fill: linear-gradient(-icons-color 0%, derive(coral, 30%) 85%);
+}

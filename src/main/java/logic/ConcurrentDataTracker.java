@@ -2,38 +2,56 @@ package logic;
 
 import objects.CrawlType;
 
+import java.io.File;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 class ConcurrentDataTracker {
 
-    String getCrawlData(long timePassed, int iterations, final int NUMBER_OF_URLS, CrawlType crawlType) {
+
+    String getPrintData(long timePassed, final int NUMBER_OF_URLS, Directory dir, CrawlType crawlType) {
         String type;
+        String path;
+        int filesWritten;
 
-        switch (crawlType) {
-            case IMAGE:
-                type = "imgs";
-                break;
-            default:
-                type = "urls";
-                break;
+        if (crawlType == CrawlType.HTML) { path = dir.getHtmlFolder().getAbsolutePath(); type = "urls"; }
+        else { path = dir.getImagesFolder().getAbsolutePath(); type = "imgs"; }
+
+        try {
+            filesWritten = Objects.requireNonNull(new File(path).listFiles()).length;
+        }
+        catch (NullPointerException ex) {
+            filesWritten = 0;
         }
 
-        double percentage = (double) (iterations / NUMBER_OF_URLS) * 100;
-        int roundDown = iterations;
-        if (iterations > NUMBER_OF_URLS) {
-            roundDown = NUMBER_OF_URLS;
-        }
-        double eta = getEta(timePassed, roundDown, NUMBER_OF_URLS);
+        Duration duration = Duration.ofNanos(timePassed);
 
-        return String.format("{timeElapsed: %.2f s} {avgSpeed: %.1f " + type + "/s} {downloaded: %d/%d [%.1f%s] {eta: %.1f s}}",
-                timePassed * Math.pow(10, -9), iterations / (timePassed * Math.pow(10, -9)), iterations, NUMBER_OF_URLS, percentage, "%", eta);
+        return String.format("crawled for: %02d:%02d:%02d | written: %d/%d | avgSpeed: %.1f " + type + "/s",
+                duration.toHoursPart(), duration.toMinutesPart(), duration.toSecondsPart(),
+                filesWritten, NUMBER_OF_URLS, filesWritten / (timePassed * Math.pow(10, -9)));
+    }
+
+    List<String> getLogData(long timePassed, int numberOfImages, String initDate, String path) {
+        int filesWritten = Objects.requireNonNull(new File(path).listFiles()).length;
+        Duration duration = Duration.ofNanos(timePassed);
+
+        return new ArrayList<>() {
+            {
+                add(String.format("%d", filesWritten));
+                add(String.format("%d", numberOfImages));
+                add(String.format("%02d:%02d:%02d",
+                        duration.toHoursPart(), duration.toMinutesPart(), duration.toSecondsPart()));
+                add(initDate);
+            }
+        };
+
+
     }
 
 
-    private double getEta(long timePassed, int iterations, int setSize) {
-        long diff = setSize - iterations;
-        long average = timePassed / iterations;
-        return (diff * average * Math.pow(10, -9));
-    }
+
 
 
 }

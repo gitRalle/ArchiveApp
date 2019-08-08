@@ -1,0 +1,64 @@
+.virtualized-scroll-pane {
+    -fx-background-color: null;
+    -fx-padding: 0;
+    -fx-cursor: default;
+}
+
+.virtualized-scroll-pane > .scroll-bar:horizontal {
+    -fx-background-radius: 0 0 2 2;
+}
+
+.virtualized-scroll-pane > .scroll-bar:vertical {
+    -fx-background-radius: 0 2 2 0;
+}
+
+.virtualized-scroll-pane > .corner {
+    -fx-background-radius: 0 0 2 0;
+}
+
+/* default area */
+.styled-text-area {
+  /*  -fx-background-color: rgb(48, 10, 36); */
+    -fx-background-color: rgba(0, 0, 0, 1.0);
+    -fx-padding: 0.25em 0.583em 0.583em 0;
+    -fx-cursor: text;
+}
+
+/* default text -> */
+.text {
+    -fx-font-family: "Monospaced"; /* Lucida Console */
+    -fx-font-size: 12px;
+   /* -fx-fill: rgb(255, 255, 255); */
+    -fx-fill: #ddd;
+}
+
+/* default caret */
+.caret {
+    -fx-stroke: white;
+}
+
+.syntax-output {
+    -fx-fill: yellowgreen;
+}
+
+.syntax-reference {
+    -fx-fill: skyblue;
+    -fx-font-size: 0.99em;
+}
+
+.syntax-warning {
+    -fx-fill: orange;
+}
+
+.syntax-error {
+    -fx-fill: red;
+}
+
+.syntax-execution {
+    -fx-fill: yellow;
+    -fx-font-size: 1.33em;
+}
+
+.syntax-filler {
+    -fx-fill: gray;
+}

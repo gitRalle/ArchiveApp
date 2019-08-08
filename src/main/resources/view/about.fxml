@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.text.TextFlow?>
+
+<BorderPane fx:id="rootBorderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="270.0" stylesheets="@/css/purple_and_white/about.css" fx:controller="controllers.AboutController" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1">
+   <center>
+      <TabPane fx:id="tabPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="270.0" tabClosingPolicy="UNAVAILABLE" tabMinWidth="115.0" BorderPane.alignment="CENTER">
+        <tabs>
+          <Tab fx:id="tabOne" text="About">
+               <content>
+                  <BorderPane fx:id="tabOneBorderPane">
+                     <bottom>
+                        <Separator prefWidth="200.0" BorderPane.alignment="CENTER" />
+                     </bottom>
+                     <left>
+                        <Separator orientation="VERTICAL" prefHeight="200.0" BorderPane.alignment="CENTER" />
+                     </left>
+                     <right>
+                        <Separator orientation="VERTICAL" prefHeight="200.0" BorderPane.alignment="CENTER" />
+                     </right>
+                     <center>
+                        <TextFlow fx:id="tabOneTextFlow" BorderPane.alignment="CENTER" />
+                     </center>
+                  </BorderPane>
+               </content>
+          </Tab>
+          <Tab fx:id="tabTwo" text="Crawl Details">
+               <content>
+                  <BorderPane fx:id="tabTwoBorderPane">
+                     <bottom>
+                        <Separator prefWidth="200.0" BorderPane.alignment="CENTER" />
+                     </bottom>
+                     <left>
+                        <Separator orientation="VERTICAL" prefHeight="200.0" BorderPane.alignment="CENTER" />
+                     </left>
+                     <right>
+                        <Separator orientation="VERTICAL" prefHeight="200.0" BorderPane.alignment="CENTER" />
+                     </right>
+                     <center>
+                        <TextFlow fx:id="tabTwoTextFlow" BorderPane.alignment="CENTER" />
+                     </center>
+                  </BorderPane>
+               </content>
+          </Tab>
+        </tabs>
+         <BorderPane.margin>
+            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+         </BorderPane.margin>
+      </TabPane>
+   </center>
+   <padding>
+      <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+   </padding>
+</BorderPane>

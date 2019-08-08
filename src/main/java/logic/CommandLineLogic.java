@@ -4,6 +4,7 @@ package logic;
 
 import javafx.scene.control.TreeView;
 import objects.CommandPrompt;
+import objects.CrawlType;
 import objects.Execute;
 
 import java.io.IOException;
@@ -33,15 +34,15 @@ public class CommandLineLogic {
                 return;
             }
         }
-        prompt.println("'" + inputText + "' is not recognized as an internal command\n", Collections.singletonList("red-text"));
+        prompt.println("'" + inputText + "' is not recognized as an internal command\n", Collections.singletonList("syntax-error"));
     }
 
     private HashMap<String, Execute> initMap() {
         return new HashMap<>() {
             {
-                put("^./crawl .* use: [1-9], \\d{1,5}+, (true|false)$",              (input) -> crawl(input, Keyword.NONE));
-                put("^./crawl .* use: [1-9], \\d{1,5}+, (true|false) --stacktrace$", (input) -> crawl(input, Keyword.STACKTRACE));
-                put("^./crawl .* use: [1-9], \\d{1,5}+, (true|false) --as [^\\s]*$", (input) -> crawl(input, Keyword.AS));
+                put("^./crawl .* use: \\d{1,2}+, \\d{1,5}+, (true|false)$",              (input) -> crawl(input, Keyword.NONE));
+                put("^./crawl .* use: \\d{1,2}+, \\d{1,5}+, (true|false) --stacktrace$", (input) -> crawl(input, Keyword.STACKTRACE));
+                put("^./crawl .* use: \\d{1,2}+, \\d{1,5}+, (true|false) --as [^\\s]*$", (input) -> crawl(input, Keyword.AS));
                 put("^./crawl init$", (input) -> {
                     if (crawler != null) {
                         crawler.init();
@@ -51,21 +52,21 @@ public class CommandLineLogic {
                 });
                 put("^./crawl data$", (input) -> {
                     if (crawler != null) {
-                        crawler.printData();
+                        crawler.printData(null);
                     } else {
                         printNullReferenceMsg();
                     }
                 });
                 put("^./crawl data --html$", (input) -> {
                    if (crawler != null) {
-                       crawler.printCrawlData();
+                       crawler.printData(CrawlType.HTML);
                    }  else {
                        printNullReferenceMsg();
                    }
                 });
                 put("^./crawl data --image$", (input) -> {
                    if (crawler != null) {
-                       crawler.printImageData();
+                       crawler.printData(CrawlType.IMAGE);
                    } else {
                        printNullReferenceMsg();
                    }
@@ -73,13 +74,6 @@ public class CommandLineLogic {
                 put("^./crawl shutdown$", (input) -> {
                     if (crawler != null) {
                         crawler.shutdown();
-                    } else {
-                        printNullReferenceMsg();
-                    }
-                });
-                put("^./crawl status$", (input) -> {
-                    if (crawler != null) {
-                        crawler.printStatus();
                     } else {
                         printNullReferenceMsg();
                     }
@@ -131,21 +125,19 @@ public class CommandLineLogic {
                             false, prompt, treeView);
 
                     commands.putIfAbsent("^./" + var + " init$",         (text) -> varCrawler.init());
-                    commands.putIfAbsent("^./" + var + " data$",         (text) -> varCrawler.printData());
-                    commands.putIfAbsent("^./" + var + " data --html$",  (text) -> varCrawler.printCrawlData());
-                    commands.putIfAbsent("^./" + var + " data --image$", (text) -> varCrawler.printImageData());
+                    commands.putIfAbsent("^./" + var + " data$",         (text) -> varCrawler.printData(null));
+                    commands.putIfAbsent("^./" + var + " data --html$",  (text) -> varCrawler.printData(CrawlType.HTML));
+                    commands.putIfAbsent("^./" + var + " data --image$", (text) -> varCrawler.printData(CrawlType.IMAGE));
                     commands.putIfAbsent("^./" + var + " shutdown$",     (text) -> varCrawler.shutdown());
-                    commands.putIfAbsent("^./" + var + " status$",       (text) -> varCrawler.printStatus());
                 }
 
                 else {
-                    prompt.println("var '" + var + "' is already in use\n", Collections.singletonList("orange-text"));
+                    prompt.println("var '" + var + "' is already in use\n", Collections.singletonList("syntax-warning"));
                 }
-
             }
         }
         catch (IllegalArgumentException ex) {
-            prompt.println(ex.getMessage() + "\n", Collections.singletonList("red-text"));
+            prompt.println(ex.getMessage() + "\n", Collections.singletonList("syntax-warning"));
         }
         catch (IOException ex) {
             ex.printStackTrace();
@@ -156,7 +148,7 @@ public class CommandLineLogic {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm yyyy-MM-dd");
         String now = LocalDateTime.now().format(formatter);
 
-        prompt.println(now + "\n", Collections.singletonList("yellow-green-text"));
+        prompt.println(now + "\n", Collections.singletonList("syntax-output"));
 
     }
 
@@ -178,7 +170,7 @@ public class CommandLineLogic {
 
             if (keyword == Keyword.NONE) {
 
-                prompt.println(now + "\n", Collections.singletonList("yellow-green-text"));
+                prompt.println(now + "\n", Collections.singletonList("syntax-output"));
 
             }
             else if (keyword == Keyword.AS) {
@@ -187,25 +179,26 @@ public class CommandLineLogic {
 
                 if (!commands.containsKey(regex)) {
 
-                    prompt.println(now + "\n", Collections.singletonList("yellow-green-text"));
+                    prompt.println(now + "\n", Collections.singletonList("syntax-output"));
                     commands.putIfAbsent(regex, (text) -> printDate("date " + args, Keyword.NONE));
                 }
                 else {
-                    prompt.println("var '" + var + "' is already in use\n", Collections.singletonList("orange-text"));
+                    prompt.println("var '" + var + "' is already in use\n", Collections.singletonList("syntax-warning"));
                 }
             }
 
         }
 
         catch (IllegalArgumentException ex) {
-            prompt.println("'" + pattern + "' threw an IllegalArgumentException\n", Collections.singletonList("red-text"));
+            prompt.println("'" + pattern + "' threw an IllegalArgumentException\n", Collections.singletonList("syntax-warning"));
         }
     }
 
 
 
     private void printNullReferenceMsg() {
-        prompt.println("no currently active crawlers\n", Collections.singletonList("orange-text"));
+        prompt.println("there are currently no active crawlers -> ./crawl --help\n", Collections.singletonList("syntax-warning"),
+                42, 56, Collections.singletonList("syntax-reference"));
     }
 
     public enum Keyword {

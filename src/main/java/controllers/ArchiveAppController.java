@@ -3,6 +3,7 @@ package controllers;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.image.Image;
+import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.text.TextFlow;
 import javafx.util.Duration;
@@ -20,9 +21,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
@@ -35,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Month;
 import java.util.*;
-
 
 import static io.IO.readRootUrl;
 
@@ -74,23 +71,30 @@ public class ArchiveAppController {
     private Node treeViewPane;
     private double dividerPosition;
 
-    private CommandPrompt prompt = new CommandPrompt();
-    private final int CONSOLE_WIDTH  = 600;
+    private final CommandPrompt prompt = new CommandPrompt();
+    private final int CONSOLE_WIDTH = 600;
     private final int CONSOLE_HEIGHT = 350;
     private boolean consoleIsShowing;
 
-    private CommandLineLogic commandLogic = new CommandLineLogic(prompt, treeView);
+    private CommandLineLogic commandLogic;
     private File initFile;
 
+    private ContextMenu contextMenu = new ContextMenu();
+
     public void initialize() {
-        if ((initFile = IO.readInitFile()) == null) { System.err.println("InitFile == null"); System.exit(0); }
+        if ((initFile = IO.readInitFile()) == null) {
+            System.err.println("InitFile == null");
+            System.exit(0);
+        }
 
         /*
-        * INIT treeView
-        * */
+         * INIT treeView
+         * */
 
         File rootFile = new File(initFile.getAbsolutePath() + "\\" + "domains"); // Files/domains
-        if (!rootFile.exists() && !rootFile.mkdir()) { System.exit(0); }
+        if (!rootFile.exists() && !rootFile.mkdir()) {
+            System.exit(0);
+        }
 
         TreeItem<String> rootTreeItem = new TreeItem<>(rootFile.getName().toUpperCase());
         rootTreeItem.setGraphic(FontUtils.createRootView());
@@ -147,7 +151,75 @@ public class ArchiveAppController {
             }
         });
 
-        treeView.getStyleClass().add("tree-view");
+        treeView.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> {
+            if (e.getButton() == MouseButton.SECONDARY) {
+
+                Node node = e.getPickResult().getIntersectedNode();
+
+                if (node instanceof Text || (node instanceof TreeCell && ((TreeCell) node).getText() != null)) {
+
+                    TreeItem<String> selectedItem = treeView.getSelectionModel().getSelectedItem();
+
+                    if (selectedItem != null && selectedItem.isLeaf()) {
+
+                        double x = e.getScreenX();
+                        double y = e.getScreenY();
+
+                        contextMenu.show(gridPane.getScene().getWindow(), x, y);
+                    } else {
+                        contextMenu.hide();
+
+                    }
+                }
+            }
+        });
+
+        /*
+         * INIT contextMenu
+         */
+
+        MenuItem aboutMenuItem = new MenuItem("About");
+        aboutMenuItem.setGraphic(FontUtils.createView("about-menu-item-icon"));
+        aboutMenuItem.setOnAction(e -> {
+            TreeItem<String> selectedItem;
+
+            if ((selectedItem = treeView.getSelectionModel().getSelectedItem()) != null) {
+                showAboutAlert(selectedItem);
+            }
+
+        });
+        MenuItem searchMenuItem = new MenuItem("Search");
+        searchMenuItem.setGraphic(FontUtils.createView("search-icon"));
+        searchMenuItem.setOnAction(e -> {
+
+        });
+        Menu codeMenu = new Menu("View code");
+        codeMenu.setGraphic(FontUtils.createView("code-menu-icon"));
+        MenuItem htmlMenuItem = new MenuItem("HTML");
+        htmlMenuItem.setGraphic(FontUtils.createView("html-menu-item-icon"));
+        htmlMenuItem.setOnAction(e -> {
+
+        });
+        MenuItem cssMenuItem = new MenuItem("CSS");
+        cssMenuItem.setGraphic(FontUtils.createView("css-menu-item-icon"));
+        cssMenuItem.setOnAction(e -> {
+
+        });
+        MenuItem jsMenuItem = new MenuItem("JavaScript");
+        jsMenuItem.setGraphic(FontUtils.createView("js-menu-item-icon"));
+        jsMenuItem.setOnAction(e -> {
+
+        });
+        codeMenu.getItems().addAll(htmlMenuItem, cssMenuItem, jsMenuItem);
+        MenuItem deleteMenuItem = new MenuItem("Delete");
+        deleteMenuItem.setGraphic(FontUtils.createView("delete-menu-item-icon"));
+        deleteMenuItem.setOnAction(e -> {
+
+        });
+
+        contextMenu.getItems().addAll(aboutMenuItem, searchMenuItem, new SeparatorMenuItem(), codeMenu, new SeparatorMenuItem(), deleteMenuItem);
+        contextMenu.getStyleClass().add("context-menu");
+
         treeView.getRoot().setExpanded(true);
         treeView.getSelectionModel().selectFirst();
 
@@ -160,8 +232,7 @@ public class ArchiveAppController {
                 addListener((observable, oldValue, newValue) -> {
                     if (newValue != null) {
                         setTextFlow(((MyTab) newValue).getHiddenTreeItem());
-                    }
-                    else {
+                    } else {
                         textFlow.getChildren().clear();
                     }
                 });
@@ -184,8 +255,9 @@ public class ArchiveAppController {
 
         /*
         ----------------------------------------------------------------------------------------------------------------
-        * INIT prompt / prompt
+        * INIT logic / prompt
         * */
+        commandLogic = new CommandLineLogic(prompt, treeView);
         prompt.setOnMessageReceivedHandler(s -> commandLogic.execute(s));
         prompt.setPrefWidth(CONSOLE_WIDTH);
         prompt.setPrefHeight(CONSOLE_HEIGHT);
@@ -208,38 +280,33 @@ public class ArchiveAppController {
         FontAwesomeIconView consoleButtonIcon = new FontAwesomeIconView();
         consoleButtonIcon.setStyleClass("prompt-button-icon");
         promptButton.setGraphic(consoleButtonIcon);
-
     }
 
     @FXML
     private void handleAnyEventOnTreeView(Event event) {
         if (event instanceof KeyEvent && event.getEventType() == KeyEvent.KEY_PRESSED &&
-                ((KeyEvent) event).getCode() == KeyCode.ENTER)
-        {
+                ((KeyEvent) event).getCode() == KeyCode.ENTER) {
             TreeItem<String> selectedTreeItem;
 
             if ((selectedTreeItem = treeView.getSelectionModel().getSelectedItem()) != null) {
 
                 if (!selectedTreeItem.isLeaf()) {
                     selectedTreeItem.setExpanded(!selectedTreeItem.isExpanded());
-                }
-
-                else if (selectedTreeItem.getValue().contains("TH")) {
+                } else {
                     openNewTab(selectedTreeItem);
                 }
             }
-        }
+        } else if (event instanceof MouseEvent && event.getEventType() == MouseEvent.MOUSE_PRESSED &&
+                ((MouseEvent) event).getButton() != MouseButton.SECONDARY) {
 
-        else if (event instanceof MouseEvent && event.getEventType() == MouseEvent.MOUSE_PRESSED) {
             Node node = ((MouseEvent) event).getPickResult().getIntersectedNode();
-            TreeItem<String> selectedTreeItem;
 
             if (node instanceof Text || (node instanceof TreeCell && ((TreeCell) node).getText() != null)) {
+                TreeItem<String> selectedTreeItem;
 
                 if ((selectedTreeItem = treeView.getSelectionModel().getSelectedItem()) != null) {
 
-                    // Todo: TH -> fix!
-                    if (selectedTreeItem.isLeaf() && selectedTreeItem.getValue().contains("TH")) {
+                    if (selectedTreeItem.isLeaf()) {
                         openNewTab(selectedTreeItem);
                     }
                 }
@@ -294,17 +361,21 @@ public class ArchiveAppController {
     }
 
     private void openNewTab(TreeItem<String> treeItem) {
-        String filePath = getFilePath(treeItem);
+        String path = getPath(treeItem);
 
-        int hashCode = readRootUrl(new File(filePath + "\\" + "url.txt")).hashCode();
+        int hashCode = readRootUrl(path).hashCode();
 
         File fileToBeLoaded = new File(
-                filePath + "\\html\\" + hashCode + ".html");
+                path + "\\html\\" + hashCode + ".html");
 
         String title = "";
 
-        try { title = Jsoup.parse(
-                fileToBeLoaded, "UTF-8").title(); } catch (IOException ex) { ex.printStackTrace(); }
+        try {
+            title = Jsoup.parse(
+                    fileToBeLoaded, "UTF-8").title();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
 
         WebView webView;
         MyTab tab = new MyTab(title, treeItem);
@@ -336,14 +407,14 @@ public class ArchiveAppController {
         if (handler != null) {
             tab.getTabPane().getTabs().remove(tab);
             handler.handle(null);
-        }
-        else {
+        } else {
             tab.getTabPane().getTabs().remove(tab);
         }
     }
 
 
-    private String getFilePath(@NotNull TreeItem<String> treeItem) {
+    @NotNull
+    private String getPath(@NotNull TreeItem<String> treeItem) {
         String labelText = treeItem.getValue();
         while ((treeItem = treeItem.getParent()) != null) {
             labelText = treeItem.getValue() + "\\" + labelText;
@@ -382,6 +453,20 @@ public class ArchiveAppController {
     }
 
     @FXML
+    private void showAdvancedSearchStage() throws Exception {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/advanced-search-tree.fxml"));
+        Parent root = loader.load();
+        AdvancedSearchTreeController controller = loader.getController();
+        controller.initController(treeView, tabPane);
+
+        Scene scene = new Scene(root);
+
+        Stage stage = new Stage();
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    @FXML
     private void showPromptStage() {
         if (!consoleIsShowing) {
 
@@ -397,17 +482,17 @@ public class ArchiveAppController {
             stage.setResizable(true);
             stage.widthProperty().addListener((observable, oldValue, newValue) -> {
                 double stageWidth = newValue.doubleValue();
-                stage.setX(gridPane.getScene().getWindow().getX() + gridPane.getScene().getWindow().getWidth() / 2 - stageWidth / 2);
+                stage.setX(gridPane.getScene().getWindow().getX() + gridPane.getScene().getWindow().getWidth() - stageWidth);
             });
 
             stage.heightProperty().addListener((observable, oldValue, newValue) -> {
                 double stageHeight = newValue.doubleValue();
-                stage.setY(gridPane.getScene().getWindow().getY() + gridPane.getScene().getWindow().getHeight() / 2 - stageHeight / 2);
+                stage.setY(gridPane.getScene().getWindow().getY() + gridPane.getScene().getWindow().getHeight() - stageHeight);
             });
 
             Scene scene = new Scene(new BorderPane(prompt), CONSOLE_WIDTH, CONSOLE_HEIGHT);
             scene.getStylesheets().add(
-                    getClass().getResource("/css/command-prompt.css").toExternalForm()
+                    getClass().getResource("/css/purple_and_white/command-prompt.css").toExternalForm()
             );
 
             EventHandler<KeyEvent> handleKeyEvent = (KeyEvent event) -> {
@@ -418,7 +503,7 @@ public class ArchiveAppController {
             };
             stage.addEventHandler(KeyEvent.KEY_PRESSED, handleKeyEvent);
 
-            stage.setOnShowing(event ->      consoleIsShowing = true);
+            stage.setOnShowing(event -> consoleIsShowing = true);
             stage.setOnCloseRequest(event -> consoleIsShowing = false);
 
             stage.setScene(scene);
@@ -427,6 +512,65 @@ public class ArchiveAppController {
             prompt.requestFocus();
         }
     }
+
+    private void showAboutAlert(TreeItem<String> treeItem) {
+        String path = getPath(treeItem);
+        File pathFile = new File(path);
+
+        // double checks selected treeItem's path (to homeFolder)
+        if (!pathFile.exists()) {
+            return;
+        }
+
+        List<String> lines = IO.readLog(pathFile.getAbsolutePath());
+
+        // checks if log.file exists
+        if (lines == null || lines.size() != 4) {
+            return;
+        }
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.initStyle(StageStyle.UTILITY);
+        alert.setGraphic(FontUtils.createView("about-icon"));
+        alert.setTitle("About");
+        alert.setHeaderText("Information");
+        alert.getDialogPane().getStylesheets().addAll(
+                getClass().getResource("/css/purple_and_white/about.css").toExternalForm(),
+                getClass().getResource("/css/purple_and_white/font.css").toExternalForm()
+        );
+        alert.getDialogPane().getStyleClass().add("dialog-pane");
+
+        alert.setOnCloseRequest(e -> alert.hide());
+        alert.getDialogPane().addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+            if (e.getCode() == KeyCode.ESCAPE) {
+                alert.hide();
+            }
+        });
+
+        Label firstRowLabel = new Label("Links to: " + lines.get(0) + " pages", FontUtils.createView("first-row-label-icon"));
+        Label secondRowLabel = new Label("Includes: " + lines.get(1) + " images", FontUtils.createView("second-row-label-icon"));
+        Label thirdRowLabel = new Label("Runtime: " + lines.get(2), FontUtils.createView("third-row-label-icon"));
+        Label fourthRowLabel = new Label(lines.get(3), FontUtils.createView("fourth-row-label-icon"));
+
+        TextFlow textFlow = new TextFlow();
+        textFlow.getChildren().addAll(firstRowLabel, new Text("\n"), secondRowLabel, new Text("\n"),
+                thirdRowLabel, new Text("\n"), fourthRowLabel);
+        textFlow.getStyleClass().add("text-flow");
+
+        Button button = ((Button) alert.getDialogPane().lookupButton(ButtonType.OK));
+        button.setText(null);
+        button.setGraphic(FontUtils.createView("about-button-icon"));
+        button.getStyleClass().add("about-button");
+
+        alert.getDialogPane().setContent(textFlow);
+        alert.getDialogPane().setPrefWidth(275);
+        alert.setX(treeItem.getGraphic().getScene().getWindow().getX() + treeItem.getGraphic().getLayoutX());
+        alert.setY(treeItem.getGraphic().getScene().getWindow().getY() + treeItem.getGraphic().getLayoutY());
+
+        alert.show();
+
+    }
+
 
 }
 

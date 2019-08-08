@@ -1,0 +1,38 @@
+.dialog-pane {
+    -fx-background-color: rgb(48, 10, 36);
+}
+
+.dialog-pane:header *. header-panel {
+    -fx-background-color: coral;
+}
+
+.dialog-pane:header *. header-panel *. label {
+    -fx-font-size: 19px;
+    -fx-text-fill: black;
+}
+
+
+.dialog-pane > *.label.content {
+
+}
+
+
+.text-flow .label {
+   -fx-font-size: 14px;
+   -fx-text-fill: white;
+   -fx-padding: 5 5 5 5;
+}
+
+.dialog-pane > *.button-bar > *.container {
+    -fx-background-color: rgb(48, 10, 36);
+}
+
+.about-button {
+    -fx-background-color: rgba(0, 0, 0, 0.5);
+}
+
+.about-button:hover {
+    -fx-background-color: rgba(0, 0, 0, 0.8);
+}
+
+

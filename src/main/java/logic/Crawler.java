@@ -1,5 +1,6 @@
 package logic;
 
+import io.IO;
 import javafx.application.Platform;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
@@ -15,6 +16,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -24,18 +26,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.IO.writeRootUrl;
 
 import utils.CrawlUtils;
-
+import utils.FontUtils;
 
 /**
  * Crawler class holds meta data needed for the nestled Crawl and Write classes to run properly
  * also holds all references for Crawl and Write threads.
  */
-public class Crawler {
+    class Crawler {
     // crawl objects
     private final String rootPage;
     private Set<String> urlsToCrawl;
@@ -43,9 +46,9 @@ public class Crawler {
     private final int NUMBER_OF_CRAWLERS;
     private final int NUMBER_OF_URLS;
     private final boolean DOWNLOAD_IMAGES;
-    private final ExecutorService crawlThreadPool;
-    private final ExecutorService writeThreadPool;
-    private ExecutorService imageThreadPool = null;
+    private final ExecutorService cThreadPool;
+    private final ExecutorService wThreadPool;
+    private ExecutorService iThreadPool = null;
     private final Directory dir;
     private final boolean STACKTRACE;
     private boolean initialized = false;
@@ -61,13 +64,17 @@ public class Crawler {
     private long imageStartTime;
     private long timePassed;
     private long imageTimePassed = 0;
+    private AtomicBoolean coreThreadsAlive = null;
+    private AtomicBoolean imageThreadsAlive = null;
     private AtomicInteger iteratorCount = new AtomicInteger(0);
+    private AtomicInteger exceptionCount = new AtomicInteger(0);
     private AtomicInteger imageIteratorCount = new AtomicInteger(0);
-    private final String crawlInitDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    private AtomicInteger imageExceptionCount = new AtomicInteger(0);
+    private String crawlInitDate;
     private String crawlExeDate = null;
 
-    public Crawler(String rootPage, int nrOfCrawlers, int nrOfUrls, boolean downloadImages, final boolean stacktrace,
-                   CommandPrompt prompt, TreeView<String> treeView) throws IOException, IllegalArgumentException {
+    Crawler(String rootPage, int nrOfCrawlers, int nrOfUrls, boolean downloadImages, final boolean stacktrace,
+            CommandPrompt prompt, TreeView<String> treeView) throws IOException, IllegalArgumentException {
         this.rootPage = rootPage;
         urlsToCrawl = Collections.newSetFromMap(new ConcurrentHashMap<>(10000)); // initialCapacity: Math.round(1.25f * nrOfUrls) / threadsTerminated crawlers at max?
         uniqueImageUrls = new UniqueConcurrentArrayList<>();
@@ -78,8 +85,8 @@ public class Crawler {
         NUMBER_OF_CRAWLERS = nrOfCrawlers;
         NUMBER_OF_URLS = nrOfUrls;
         DOWNLOAD_IMAGES = downloadImages;
-        crawlThreadPool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
-        writeThreadPool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
+        cThreadPool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
+        wThreadPool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
         STACKTRACE = stacktrace;
 
         dir = new Directory(rootPage); // can throw exceptions
@@ -87,8 +94,8 @@ public class Crawler {
         this.prompt = prompt;
         this.treeView = treeView;
 
-        prompt.println("ready -> ./<crawl> init\n", Collections.singletonList("yellow-green-text"),
-                9, 23, Collections.singletonList("sky-blue-text"));
+        this.prompt.println("ready -> ./<crawl> init\n", Collections.singletonList("syntax-output"),
+                9, 23, Collections.singletonList("syntax-reference"));
     }
 
     /**
@@ -125,7 +132,7 @@ public class Crawler {
                     }
                     // if url hasn't already been saved -> submit a new Runnable
                     if (urlsToCrawl.add(nextUrl)) {
-                        crawlThreadPool.submit(new Crawl(nextUrl));
+                        cThreadPool.submit(new Crawl(nextUrl));
                     }
                 }
                 // get all link[rel=stylesheet]
@@ -138,44 +145,11 @@ public class Crawler {
                     currentLink.attr("href", "../assets/css/" + absUrl.hashCode() + ".css");
                 }
 
-                if (DOWNLOAD_IMAGES) {
+                wThreadPool.submit(new Write(doc));
 
-                    Elements images = doc.select("picture source[srcSet], img[srcSet]");
-                    for (Element e : images) {
-                        String url;
-
-                        if (e.attr("src").equals("") && !e.attr("srcSet").equals("")) {
-                            url = CrawlUtils.convertSrcSetToUrl(e.attr("srcSet"));
-                        } else if (!e.attr("src").equals("") && e.attr("srcSet").equals("")) {
-                            url = e.attr("src");
-                        } else {
-                            url = CrawlUtils.convertSrcSetToUrl(e.attr("srcSet"));
-                        }
-
-                        e.parent().append("<img src=" + '"' + url + '"' + ">");
-                        e.remove();
-                    }
-
-                    images = doc.select("img[src]");
-                    for (Element img : images) {
-                        String url = img.absUrl("src");
-
-                        String extensionType = CrawlUtils.getExtensionType(url);
-
-                        if (!extensionType.equals("noContentType")) {
-                            img.attr("src", "../assets/images/" + url.hashCode() + "." + extensionType);
-                            uniqueImageUrls.add(url);
-                        } else {
-                            img.attr("alt", "noContentType found");
-                        }
-
-                    }
-                } // end of if (DOWNLOAD_IMAGES)
-
-                writeThreadPool.submit(new Write(doc));
             } catch (IOException ex) {
                 if (STACKTRACE) {
-                    prompt.println(ex.getMessage() + ": " + urlToCrawl + "\n", Collections.singletonList("red-text"));
+                    prompt.println(ex.getMessage() + ": " + urlToCrawl + "\n", Collections.singletonList("syntax-error"));
                 }
             }
         }
@@ -195,19 +169,55 @@ public class Crawler {
         public void run() {
             if (iteratorCount.get() <= (NUMBER_OF_URLS - NUMBER_OF_CRAWLERS)) {
 
-                try {
-                    FileWriter writer = new FileWriter(new File(dir.getHtmlFolder().getAbsolutePath() + "\\" + document.location().hashCode() + ".html"));
+                if (DOWNLOAD_IMAGES) {
+
+                    Elements images = document.select("picture source[srcSet], img[srcSet]");
+                    for (Element e : images) {
+                        String url;
+
+                        if (e.attr("src").equals("") && !e.attr("srcSet").equals("")) {
+                            url = CrawlUtils.convertSrcSetToUrl(e.attr("srcSet"));
+                        } else if (!e.attr("src").equals("") && e.attr("srcSet").equals("")) {
+                            url = e.attr("src");
+                        } else {
+                            url = CrawlUtils.convertSrcSetToUrl(e.attr("srcSet"));
+                        }
+
+                        e.parent().append("<img src=" + '"' + url + '"' + ">");
+                        e.remove();
+                    }
+
+                    images = document.select("img[src]");
+                    for (Element img : images) {
+                        String url = img.absUrl("src");
+
+                        String extensionType = CrawlUtils.getExtensionType(url);
+
+                        if (!extensionType.equals("noContentType")) {
+                            img.attr("src", "../assets/images/" + url.hashCode() + "." + extensionType);
+                            uniqueImageUrls.add(url);
+                        } else {
+                            img.attr("alt", "noContentType found");
+                        }
+
+                    }
+                } // end of if (DOWNLOAD_IMAGES)
+
+                try (FileWriter writer = new FileWriter(
+                        new File(dir.getHtmlFolder().getAbsolutePath() + "\\" + document.location().hashCode() + ".html"))) {
                     writer.write(document.html());
-                    writer.close();
-                } catch (IOException ex) {
+                }
+                catch (IOException ex) {
+                    exceptionCount.incrementAndGet();
                     ex.printStackTrace();
-                } finally {
+                }
+                finally {
                     iteratorCount.incrementAndGet();
                 }
 
             } else { // end of iteratorCount <= NUMBER_OF_URLS
 
-                if (!writeThreadPool.isShutdown()) {
+                if (coreThreadsAlive.get()) {
                     shutdownExecutorService(); // is synchronized
                 }
             }
@@ -220,7 +230,7 @@ public class Crawler {
     private class ImageDownloader implements Runnable {
         private final String url;
 
-        public ImageDownloader(String url) {
+        private ImageDownloader(String url) {
             this.url = url;
         }
 
@@ -250,10 +260,11 @@ public class Crawler {
                 ImageIO.write(bufferedImage, format, file);
 
             } catch (IOException | IllegalArgumentException ex) {
+                imageExceptionCount.incrementAndGet();
                 if (STACKTRACE) {
                     prompt.println(
                             ex.getMessage() + ": " + url + "[." + CrawlUtils.getExtensionType(url) + "]\n",
-                            Collections.singletonList("red-text"));
+                            Collections.singletonList("syntax-error"));
                 }
             } finally {
                 imageIteratorCount.incrementAndGet();
@@ -261,8 +272,7 @@ public class Crawler {
         }
     }
 
-    /**
-     * downloads all stylesheets found in rootPage, called by this::init prior to crawl start.
+    /** downloads all stylesheets found in rootPage, called by this::init prior to crawl start.
      */
     private void downloadStylesheets() {
         try {
@@ -287,7 +297,12 @@ public class Crawler {
                 reader.close();
                 writer.close();
             }
-        } catch (IOException ex) {
+        }
+        catch (UnknownHostException ex) {
+
+        }
+
+        catch (IOException ex) {
             ex.printStackTrace();
         }
     }
@@ -296,8 +311,9 @@ public class Crawler {
      * shuts down the crawling process - called by Runnable Writer or by user if called through gui
      */
     private synchronized void shutdownExecutorService() {
-        crawlThreadPool.shutdownNow();
-        writeThreadPool.shutdownNow();
+        cThreadPool.shutdownNow();
+        wThreadPool.shutdownNow();
+        coreThreadsAlive.set(false);
         setTimePassed(CrawlType.HTML);
 
         if (DOWNLOAD_IMAGES) {
@@ -305,24 +321,22 @@ public class Crawler {
             ExecutorService executorService = Executors.newFixedThreadPool(1);
             executorService.execute(() -> {
                 imageStartTime = System.nanoTime();
-                imageThreadPool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
+                iThreadPool = Executors.newFixedThreadPool(NUMBER_OF_CRAWLERS);
+                imageThreadsAlive = new AtomicBoolean(true);
 
                 for (String url : uniqueImageUrls) {
-                    imageThreadPool.submit(new ImageDownloader(url));
+                    iThreadPool.submit(new ImageDownloader(url));
                 }
-                imageThreadPool.shutdown();
+                iThreadPool.shutdown();
 
                 try {
-                    imageThreadPool.awaitTermination(Integer.MAX_VALUE, TimeUnit.HOURS);
+                    iThreadPool.awaitTermination(Integer.MAX_VALUE, TimeUnit.HOURS);
+                    imageThreadsAlive.set(false);
                     setTimePassed(CrawlType.IMAGE);
-                    String timeElapsed = String.valueOf(Math.round((System.nanoTime() - startTime) * Math.pow(10, -9)));
-                    String promptOutput = "crawl executed in " + timeElapsed + " s -> ./crawl status";
-                    prompt.println(promptOutput,
-                            Collections.singletonList("gray-text"),
-                            0, 14, Arrays.asList("yellow-text", "big-font"),
-                            promptOutput.length() - 14, promptOutput.length(), Collections.singletonList("sky-blue-text"));
-                    prompt.lineSeparator();
-                  //  updateControllerTreeView();
+                    crawlExeDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    updateControllerTreeView();
+                    log();
+                    printExeMsg(timePassed + imageTimePassed);
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                 }
@@ -332,16 +346,11 @@ public class Crawler {
         } // end of DOWNLOAD_IMAGES
 
         else {
-            String timeElapsed = String.valueOf(Math.round((System.nanoTime() - startTime) * Math.pow(10, -9)));
-            String promptOutput = "crawl executed in " + timeElapsed + " s -> ./crawl status";
-            prompt.println(promptOutput,
-                    Collections.singletonList("gray-text"),
-                    0, 14, Arrays.asList("yellow-text", "big-font"),
-                    promptOutput.length() - 14, promptOutput.length(), Collections.singletonList("sky-blue-text"));
-            prompt.lineSeparator();
+            crawlExeDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            updateControllerTreeView();
+            log();
+            printExeMsg(timePassed);
         }
-        crawlExeDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-      //  updateControllerTreeView();
     }
 
     /**
@@ -357,23 +366,24 @@ public class Crawler {
             TreeItem<String> monthTreeItem = new TreeItem<>(dir.getMonth());
             TreeItem<String> dayTreeItem = new TreeItem<>(dir.getDay());
 
-            // Todo: -> Throws NullPointerException! fix!
             for (TreeItem<String> currentDomainItem : treeView.getRoot().getChildren()) {
                 if (currentDomainItem.getValue().equals(dir.getName())) {
+                    // domain treeItem already exists
                     action = "year + month + day";
                     domainTreeItem = currentDomainItem;
 
                     for (TreeItem<String> currentYearItem : currentDomainItem.getChildren()) {
                         if (currentYearItem.getValue().equals(dir.getYear())) {
+                            // year treeItem already exists
                             action = "month + day";
                             yearTreeItem = currentYearItem;
 
                             for (TreeItem<String> currentMonthItem : currentYearItem.getChildren()) {
                                 if (currentMonthItem.getValue().equals(dir.getMonth())) {
+                                    // month threeItem already exists ->
                                     // ADD ONLY DAY
                                     action = "day";
                                     monthTreeItem = currentMonthItem;
-                                    dayTreeItem = new TreeItem<>(dir.getDay());
                                     break;
                                 }
                             }
@@ -384,26 +394,36 @@ public class Crawler {
 
             switch (action) {
                 case "day":
+                    dayTreeItem.setGraphic(FontUtils.createLeafView());
                     monthTreeItem.getChildren().add(dayTreeItem);
-                    monthTreeItem.getChildren().sort(Comparator.comparingInt(o -> Integer.parseInt(o.getValue().split("TH", 2)[0])));
+                    monthTreeItem.getChildren().sort(Comparator.comparingInt(o -> Integer.parseInt(o.getValue().split("(ST|ND|RD|TH)", 2)[0])));
                     break;
                 case "month + day":
+                    dayTreeItem.setGraphic(FontUtils.createLeafView());
+                    monthTreeItem.setGraphic(FontUtils.createBranchView());
                     monthTreeItem.getChildren().add(dayTreeItem);
-                    monthTreeItem.getChildren().sort(Comparator.comparingInt(o -> Integer.parseInt(o.getValue().split("TH", 2)[0])));
+                    monthTreeItem.getChildren().sort(Comparator.comparingInt(o -> Integer.parseInt(o.getValue().split("(ST|ND|RD|TH)", 2)[0])));
                     yearTreeItem.getChildren().add(monthTreeItem);
                     yearTreeItem.getChildren().sort(Comparator.comparingInt(o -> Month.valueOf(o.getValue()).getValue()));
                     break;
                 case "year + month + day":
+                    dayTreeItem.setGraphic(FontUtils.createLeafView());
+                    monthTreeItem.setGraphic(FontUtils.createBranchView());
+                    yearTreeItem.setGraphic(FontUtils.createBranchView());
                     monthTreeItem.getChildren().add(dayTreeItem);
-                    monthTreeItem.getChildren().sort(Comparator.comparingInt(o -> Integer.parseInt(o.getValue().split("TH", 2)[0])));
+                    monthTreeItem.getChildren().sort(Comparator.comparingInt(o -> Integer.parseInt(o.getValue().split("(ST|ND|RD|TH)", 2)[0])));
                     yearTreeItem.getChildren().add(monthTreeItem);
                     yearTreeItem.getChildren().sort(Comparator.comparingInt(o -> Month.valueOf(o.getValue()).getValue()));
                     domainTreeItem.getChildren().add(yearTreeItem);
                     domainTreeItem.getChildren().sort(Comparator.comparingInt(o -> Integer.parseInt(o.getValue())));
                     break;
                 case "domain + year + month + day":
+                    dayTreeItem.setGraphic(FontUtils.createLeafView());
+                    monthTreeItem.setGraphic(FontUtils.createBranchView());
+                    yearTreeItem.setGraphic(FontUtils.createBranchView());
+                    domainTreeItem.setGraphic(FontUtils.createRootView());
                     monthTreeItem.getChildren().add(dayTreeItem);
-                    monthTreeItem.getChildren().sort(Comparator.comparingInt(o -> Integer.parseInt(o.getValue().split("TH", 2)[0])));
+                    monthTreeItem.getChildren().sort(Comparator.comparingInt(o -> Integer.parseInt(o.getValue().split("(ST|ND|RD|TH)", 2)[0])));
                     yearTreeItem.getChildren().add(monthTreeItem);
                     yearTreeItem.getChildren().sort(Comparator.comparingInt(o -> Month.valueOf(o.getValue()).getValue()));
                     domainTreeItem.getChildren().add(yearTreeItem);
@@ -412,15 +432,34 @@ public class Crawler {
                     treeView.getRoot().getChildren().sort(Comparator.comparing(TreeItem::getValue));
                     break;
                 default:
-                    System.err.println("error updating controllerTreeView");
+                    prompt.println("failed to update the TreeView\n", Collections.singletonList("syntax-error"));
             }
 
         });
     }
 
+    private void log() {
+        if (initialized) {
+            if (crawlExeDate != null) {
+                boolean success = IO.writeLog(dir.getHomeFolder().getAbsolutePath(),
+                        dataTracker.getLogData(
+                                timePassed + imageTimePassed,
+                                imageIteratorCount.get() - imageExceptionCount.get(),
+                                dir.getDirInitDate(), dir.getHtmlFolder().getAbsolutePath()));
+                if (success) {
+                } else {
+                    prompt.println("failed to log crawl\n", Collections.singletonList("syntax-error"));
+                }
+            }
+            else {
+            }
+        }
+        else {
+            printInitMsg();
+        }
+    }
 
-    /**
-     * private helper method, sets time elapsed since start of param operation.
+    /** used for keeping track of time elapsed, since this::init called
      */
     private void setTimePassed(CrawlType crawlType) {
         if (crawlType == CrawlType.HTML)
@@ -433,116 +472,115 @@ public class Crawler {
     /* public methods ->
     ---------------------------------------------------------------------------------------------------*/
 
-    /**
-     * starts the crawling process
+    /** initiates and starts a crawl
      */
-    public void init() {
+    void init() {
         initialized = true;
+        crawlInitDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         writeRootUrl(rootPage, dir.getHomeFolder().getAbsolutePath());
         downloadStylesheets();
 
         startTime = System.nanoTime();
-        prompt.println("root dependencies setup finished -> crawl initiated\n", Collections.singletonList("yellow-green-text"));
-        crawlThreadPool.submit(new Crawl(rootPage));
+        prompt.println("root dependencies setup finished -> crawl initiated\n", Collections.singletonList("syntax-output"));
+        coreThreadsAlive = new AtomicBoolean(true);
+        cThreadPool.execute(new Crawl(rootPage));
     }
 
-    /**
-     * shuts down the crawling process if is not already threadsTerminated - called by fxApplicationThread
+    /** invokes a shutdown of all non image threads
      */
-    public void shutdown() {
+    void shutdown() {
         if (initialized) {
-            if (!crawlThreadPool.isTerminated() || (imageThreadPool != null && !imageThreadPool.isTerminated())) {
+            if (coreThreadsAlive.get() || (imageThreadsAlive != null && imageThreadsAlive.get())) {
+                prompt.println("shutdown invoked\n", Collections.singletonList("syntax-output"));
                 shutdownExecutorService();
             } else {
-                prompt.println("crawler is already shutdown\n", Collections.singletonList("orange-text"));
+                prompt.println("crawler is already shutdown\n", Collections.singletonList("syntax-warning"));
             }
-        }
-        else {
-            prompt.println("crawler has not been initialized\n", Collections.singletonList("orange-text"));
+        } else {
+            printInitMsg();
         }
     }
 
-    /**
-     * appends the console component with data on current or most recent crawl
-     */
-    public void printCrawlData() {
-        if (initialized) {
-            if (!crawlThreadPool.isTerminated()) {
-                setTimePassed(CrawlType.HTML);
-            }
-            prompt.println(dataTracker.getCrawlData(
-                    timePassed, iteratorCount.get(), NUMBER_OF_URLS, CrawlType.HTML) + "\n", Collections.singletonList("yellow-green-text"));
-        }
-        else {
-            prompt.println("crawler has not been initialized\n", Collections.singletonList("orange-text"));
-        }
+    void printData(CrawlType crawlType) {
 
-    }
+        if (crawlType == CrawlType.HTML) {
 
-    public void printImageData() {
-        if (initialized) {
-            if (imageThreadPool != null && !imageThreadPool.isTerminated()) {
-                setTimePassed(CrawlType.IMAGE);
-            }
-            if (DOWNLOAD_IMAGES) {
-                prompt.println(dataTracker.getCrawlData(
-                        imageTimePassed, imageIteratorCount.get(), uniqueImageUrls.size(), CrawlType.IMAGE) + "\n", Collections.singletonList("yellow-green-text"));
+            if (initialized) {
+                if (coreThreadsAlive.get()) {
+                    setTimePassed(CrawlType.HTML);
+                }
+                prompt.println(dataTracker.getPrintData(
+                        timePassed, NUMBER_OF_URLS, dir, CrawlType.HTML) + "\n",
+                        Collections.singletonList("syntax-output"));
+
+
             } else {
-                prompt.println("crawler has not been instructed to crawl for images\n", Collections.singletonList("orange-text"));
+                printInitMsg();
             }
         }
-        else {
-            prompt.println("crawler has not been initialized\n", Collections.singletonList("orange-text"));
+
+        else if (crawlType == CrawlType.IMAGE) {
+
+            if (initialized) {
+                if (imageThreadsAlive != null && imageThreadsAlive.get()) {
+                    setTimePassed(CrawlType.IMAGE);
+                }
+                if (DOWNLOAD_IMAGES) {
+                    prompt.println(dataTracker.getPrintData(
+                            imageTimePassed, uniqueImageUrls.size(), dir, CrawlType.IMAGE) + "\n",
+                            Collections.singletonList("syntax-output"));
+                } else {
+                    prompt.println("crawler has not been instructed to crawl for images\n", Collections.singletonList("syntax-warning"));
+                }
+            } else {
+                printInitMsg();
+            }
         }
 
+        else {
+
+            if (initialized) {
+                String str = "\n";
+
+                if (coreThreadsAlive.get()) {
+                    setTimePassed(CrawlType.HTML);
+                }
+
+                if (DOWNLOAD_IMAGES) {
+                    str = "";
+                }
+
+                prompt.println(dataTracker.getPrintData(
+                        timePassed, NUMBER_OF_URLS, dir, CrawlType.HTML) + str,
+                        Collections.singletonList("syntax-output"));
+
+                if (imageThreadsAlive != null && imageThreadsAlive.get()) {
+                    setTimePassed(CrawlType.IMAGE);
+                }
+
+                if (DOWNLOAD_IMAGES) {
+                    prompt.println(dataTracker.getPrintData(
+                            imageTimePassed, uniqueImageUrls.size(), dir, CrawlType.IMAGE) + "\n",
+                            Collections.singletonList("syntax-output"));
+                }
+            } else {
+                printInitMsg();
+            }
+        }
     }
 
-    public void printData() {
-        if (initialized) {
-            String str = "\n";
-
-            if (!crawlThreadPool.isTerminated()) {
-                setTimePassed(CrawlType.HTML);
-            }
-
-            if (DOWNLOAD_IMAGES) {
-                str = "";
-            }
-
-            prompt.println(dataTracker.getCrawlData(
-                    timePassed, iteratorCount.get(), NUMBER_OF_URLS, CrawlType.HTML) + str, Collections.singletonList("yellow-green-text"));
-
-            if (imageThreadPool != null && !imageThreadPool.isTerminated()) {
-                setTimePassed(CrawlType.IMAGE);
-            }
-
-            if (DOWNLOAD_IMAGES) {
-                prompt.println(dataTracker.getCrawlData(
-                        imageTimePassed, imageIteratorCount.get(), uniqueImageUrls.size(), CrawlType.IMAGE) + "\n", Collections.singletonList("yellow-green-text"));
-            }
-        }
-        else {
-            prompt.println("crawler has not been initialized\n", Collections.singletonList("orange-text"));
-        }
+    private void printInitMsg() {
+        prompt.println("crawler has not been initialized\n", Collections.singletonList("syntax-warning"));
     }
 
-    public void printStatus() {
-        if (initialized) {
-            prompt.println(rootPage + ", " + NUMBER_OF_CRAWLERS + ", " + NUMBER_OF_URLS + ", " + DOWNLOAD_IMAGES,
-                    Collections.singletonList("yellow-green-text"));
-            prompt.println("dir setup on: " + dir.getDirInitDate(), Collections.singletonList("sky-blue-text"));
-            prompt.println("crawl init on: " + crawlInitDate, Collections.singletonList("sky-blue-text"));
-            if (crawlExeDate != null) {
-                prompt.println("crawl exe on: " + crawlExeDate + "\n", Collections.singletonList("yellow-text"));
-            }
-            else {
-                prompt.lineSeparator();
-            }
-        }
-        else {
-            prompt.println("crawler has not been initialized\n", Collections.singletonList("orange-text"));
-        }
+    private void printExeMsg(long timePassed) {
+        String promptOutput = String.format("crawl executed in %.1f s -> ./crawl data", (timePassed * Math.pow(10, -9)));
+        prompt.println(promptOutput,
+                Collections.singletonList("syntax-filler"),
+                0, 14, Collections.singletonList("syntax-execution"),
+                promptOutput.length() - 12, promptOutput.length(), Collections.singletonList("syntax-reference"));
+        prompt.lineSeparator();
     }
 
 }
